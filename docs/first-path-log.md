@@ -22,6 +22,12 @@ Build plan: `k3s-first-path.md` and `track-assessment.md` (shared notes folder o
 | 2026-11-18 | Q8: Node.js LTS, no runtime dependency, `node:test`, `node:http` | Olivier |
 | 2026-11-18 | C0: the public `cycloidio/academy-blueprints` populates the catalog in C0. Not working yet; the Cycloid team is implementing it | Olivier |
 | 2026-11-18 | C1 scaffolding: the platform team creates the repository for the developer, then a Blueprint sets up the app's technical stack in it | Olivier |
+| 2026-11-18 | D1: until Cycloid runs `terraform` steps and takes Blueprint files from Git, C3 runs Terraform inside a `shell` step with the official Terraform image, which fetches the public `academy-blueprints` code at a fixed version; marked in the Blueprint and here as the part to replace. `shell` rather than `docker` because only a `shell` step returns outputs (the VM address becomes a Resource property); both run the image in the same kind of container | Olivier |
+| 2026-11-18 | D2: Terraform state in an S3 bucket in the prospect's account, created in C2 | Olivier |
+| 2026-11-18 | D3: the C3 run reaches AWS by OIDC; Terraform's AWS provider exchanges the token itself. Needs Cycloid's issuer URL, audience and subject format | Olivier |
+| 2026-11-18 | D4: the VM writes a kubeconfig limited to the `academy` namespace into Secrets Manager; the person pastes it into the Environment's credentials in Cycloid | Olivier |
+| 2026-11-18 | D5: the app's address is a hostname through sslip.io (`<slug>.<vm-ip>.sslip.io` or similar) on K3s's Traefik; a `shell` step returns it as a Resource property | Olivier |
+| 2026-11-18 | C2 setup: one pasted AWS CLI block in AWS CloudShell (state bucket, permissions boundary, OIDC provider, `academy-` role), no Terraform; a second block removes it | Olivier |
 | 2026-11-18 | First investigation, before any build: can the kubeconfig live in AWS Secrets Manager, so that the Kubernetes Provider finds it there | Olivier |
 
 ## Cycloid format references
@@ -136,6 +142,8 @@ Beta date given: 7 Dec 2026, after the Academy launch of 1 Dec.
 | Provider credential contract (G8): how is `provides_credential_types` set on a real Provider Blueprint, so a Kubernetes Provider offers `kubeconfig` and an AWS Provider `aws-oidc`? | 2026-11-18 | Kubernetes Provider form being built, before the beta; AWS Provider not answered |
 | Can a run create or update a credential or a Provider? | 2026-11-18 | No, not planned (G9) |
 | How does a Helm-deployed Resource get its address? | 2026-11-18 | Not reported; `shell` step output (G10) |
+| For D3: Cycloid's OIDC issuer URL on the alpha, the audience value, and the subject claim format (to write the AWS trust policy) | Not yet | |
+| How does an app Blueprint read a property of another Resource (the cluster's IP, for the sslip.io hostname): a form source listing Resources, a relation in expressions, or a form field the person fills? | Not yet | |
 | AWS Secrets Manager backend (FS-1937): when, and can a credential reference an existing secret in the customer's account (ARN) with the Provider's AWS role, rather than one Cycloid writes? | Not yet | |
 
 ## Comparison grid entries (K3s)
