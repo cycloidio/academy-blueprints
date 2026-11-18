@@ -67,6 +67,25 @@ Paths in the `cycloid` repository. Checked by hand where marked (checked); the r
 - **Blueprint sources.** Upload of a file bundle (entry `blueprint.yaml`) is implemented; a Git sync of a source
   repository was not found.
 
+### Cycloid product team answer (2026-11-18, checked against their code of that day)
+
+Beta date given: 7 Dec 2026, after the Academy launch of 1 Dec.
+
+| Topic | Today on the alpha | Plan |
+|---|---|---|
+| Step types | Only `helm`, `shell`, `docker` run. `terraform` and `ansible` do not | Beta (open pull request, not merged) |
+| Network | Steps run in the alpha cluster and reach public addresses only. The K3s API (6443) must answer on the VM's public IP, with that IP in the certificate (`--tls-san <public-ip>`) | |
+| Git source for Blueprint files | None: charts and values come from a URL or inline in the Blueprint | Beta, not started |
+| Credential lookup | By declared type, closest first: Resource, Environment, the Environment's Providers, Team, workspace. Every declared credential reaches every step of the run | Per-step credential: not planned |
+| `helm` + `kubeconfig` | Works. `KUBECONFIG` points at a file holding exactly the pasted kubeconfig; its current context is used. The helm image has no cloud tools: a plain kubeconfig with a token or certificate. K3s's default kubeconfig is fine | |
+| What a step gets per credential type | AWS access key: `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_DEFAULT_REGION`. Azure service principal: `ARM_*`. GCP service account: key file in `GOOGLE_APPLICATION_CREDENTIALS`. OIDC types: the raw token only, no exchange for cloud credentials | Exchange: not planned |
+| Ansible until the beta | Their suggestion: a `docker` step with one's own Ansible image, which gets the same variables | |
+| Run creating a credential or Provider | Not possible. Outputs only become Resource properties | Not planned |
+| Their PoC suggestion for the kubeconfig | Install K3s on the VM, copy `/etc/rancher/k3s/k3s.yaml`, replace `127.0.0.1` with the public IP, paste it into Cycloid as a kubeconfig credential | |
+| Kubernetes Provider form | None yet. A kubeconfig is pasted into one field, checked only for being non-empty, no connection test | Form: before the beta. Connection test: not planned |
+| Address of a Helm-deployed Resource | Only release status and revision are reported. Their suggestion: pick the hostname per environment (K3s's Traefik plus a wildcard DNS such as sslip.io, `app-dev.<vm-ip>.sslip.io`), pass it to the chart, and a small `shell` step returns it as an output, which becomes a Resource property | Address reporting: not planned |
+| Chart location | A public URL: an OCI registry address or a `.tgz` link. No version setting, so a `.tgz` link is the sure way to pin | Charts from the Blueprint's Git repository: beta, not started. Version setting, named repo, private registry: not planned |
+
 ## Ideas to confirm with Olivier (not decisions)
 
 - **C0, public catalog source.** The catalog comes from the public `cycloidio/academy-blueprints` added as a Blueprint
@@ -92,26 +111,31 @@ Paths in the `cycloid` repository. Checked by hand where marked (checked); the r
 
 | Gap | Seen at step | Waits on |
 |---|---|---|
-| G1. No Git source for step code: a `terraform` step has no way to get its code, a `helm` step only a chart URL | Code read, 2026-11-18 | Cycloid team (VCS access check, specs 04 §3). Blocks C3 as planned (cluster created by a `terraform` step from Blueprint code) |
-| G2. `terraform` steps do not run on the container runtime | Code read; confirmed on the alpha by T2, 2026-11-18 | Cycloid team. The alpha runs the container runtime: no Blueprint can use a `terraform` step today, on either track (C3 cluster, VM, the C2 check of step 7) |
+| G1. No Git source for step code: a `terraform` step has no way to get its code, a `helm` step only a chart URL | Code read, 2026-11-18 | Cycloid: beta (7 Dec), not started. Blocks C3 as planned (cluster created by a `terraform` step from Blueprint code) |
+| G2. `terraform` steps do not run on the container runtime | Code read; confirmed on the alpha by T2, 2026-11-18 | Cycloid: beta (7 Dec, open pull request). Until then no Blueprint can use a `terraform` or `ansible` step, on either track (C3 cluster, VM, the C2 check of step 7) |
 | G3. No Terraform state backend from Cycloid; the plan assumed hosted state (K:43-47) | Code read, 2026-11-18 | Cycloid team |
 | G4. `helm upgrade` without `--install`: the same action cannot both create and update a release; the plan's M1 deploy then M2 update need two workflows (`deploy` = install, update = upgrade) | Code read, 2026-11-18 | Probe confirms; question to the Cycloid team (the usual pattern is `upgrade --install`) |
 | G5. `helm` step has no `version` parameter: the version must be in the chart reference | Code read, 2026-11-18 | Probe tests the OCI form `oci://...:<version>` |
-| G6. `aws-oidc` does not set `AWS_WEB_IDENTITY_TOKEN_FILE` | Code read, 2026-11-18 | Test at C2 (step 7) |
-| G7. AWS Secrets Manager as a credential store: in the specs (07/10 §6, Cycloid stores the ARN reference), not available in the code (`AVAILABLE_CREDENTIAL_BACKENDS` is `cycloid-db` only, external backends come with FS-1937). It is a tenant-level backend Cycloid writes to, so whether a credential can point at a secret the cluster's VM wrote in the prospect's account is not said | Code read, 2026-11-18 | Olivier's check in the alpha UI; Cycloid team (FS-1937 date, reference to an existing secret) |
-| G8. A Provider offers only the credential types its Provider Blueprint lists in `provides_credential_types`, plus the built-ins; plugin types such as `kubeconfig` (and `aws-oidc`) are filtered out otherwise. In the code, only test fixtures and mock providers set that list; no production path sets it from a Blueprint or a plugin (`apps/web/app/utils/credentialTypes.ts`, `packages/database/src/schema/blueprints.ts`, `packages/fixtures/src/loader.ts`). Explains T1 | T1, 2026-11-18 | Cycloid team. Real alternative in the credential hierarchy: a `kubeconfig` credential on the Environment (default resolution walk: Resource, Environment, Provider, Team, tenant), to test |
+| G6. OIDC credential types give the step the raw token only; Cycloid does not exchange it for cloud credentials | Code read; confirmed by the Cycloid team, 2026-11-18 | Not planned. The step does the exchange itself (for Terraform, the AWS provider's web identity settings) |
+| G7. AWS Secrets Manager as a credential store: in the specs (07/10 §6, Cycloid stores the ARN reference), not available in the code (`AVAILABLE_CREDENTIAL_BACKENDS` is `cycloid-db` only, external backends come with FS-1937). It is a tenant-level backend Cycloid writes to, so whether a credential can point at a secret the cluster's VM wrote in the prospect's account is not said | Code read, 2026-11-18 | Cycloid team (FS-1937 date). Moot for the day-1 path while a run cannot create a credential (G9): the kubeconfig is pasted by a person |
+| G8. A Provider offers only the credential types its Provider Blueprint lists in `provides_credential_types`, plus the built-ins; plugin types such as `kubeconfig` (and `aws-oidc`) are filtered out otherwise. In the code, only test fixtures and mock providers set that list; no production path sets it from a Blueprint or a plugin (`apps/web/app/utils/credentialTypes.ts`, `packages/database/src/schema/blueprints.ts`, `packages/fixtures/src/loader.ts`). Explains T1 | T1, 2026-11-18 | Cycloid: Kubernetes Provider form before the beta. Meanwhile a `kubeconfig` credential on the Environment (lookup: Resource, Environment, Providers, Team, workspace), to test |
+| G9. A run cannot create or update a credential or a Provider; outputs only become Resource properties. The kubeconfig of a cluster a Blueprint creates must be pasted into Cycloid by a person | Cycloid team, 2026-11-18 | Not planned |
+| G10. A `helm` step reports no address; the Resource gets one only from a `shell` step output | Cycloid team, 2026-11-18 | Not planned |
+| G11. A pasted kubeconfig is checked only for being non-empty, no connection test | Cycloid team, 2026-11-18 | Not planned |
 
 ## Questions for the Cycloid team
 
 | Question | Asked | Answer |
 |---|---|---|
-| When will `terraform` (and `ansible`) steps run on the container runtime the alpha uses (T2)? | Not yet | |
-| When does a Blueprint `source` (Git checkout of step code) become available? Until then, how is Terraform code meant to reach a `terraform` step? | Not yet | |
-| Does Cycloid provide Terraform state, or does the Blueprint bring its own backend? | Not yet | |
-| Should `helm upgrade` take `--install`, so one action creates and updates a release? | Not yet | |
-| How does `aws-oidc` reach the Terraform AWS provider (no `AWS_WEB_IDENTITY_TOKEN_FILE`)? | Not yet | |
+| When will `terraform` (and `ansible`) steps run on the container runtime the alpha uses (T2)? | 2026-11-18 | Beta, 7 Dec (open pull request) |
+| When does a Blueprint `source` (Git checkout of step code) become available? Until then, how is Terraform code meant to reach a `terraform` step? | 2026-11-18 | Beta, not started; until then URL or inline only |
+| Does Cycloid provide Terraform state, or does the Blueprint bring its own backend? | Not yet | Still open |
+| Should `helm upgrade` take `--install`, so one action creates and updates a release? | Not yet | Still open |
+| How does `aws-oidc` reach the Terraform AWS provider (no `AWS_WEB_IDENTITY_TOKEN_FILE`)? | 2026-11-18 | Raw token only, no exchange, not planned |
 | How does a Blueprint source get into a workspace: bundle upload only, or a Git repository URL? | Not yet | |
-| Provider credential contract (G8): how is `provides_credential_types` set on a real Provider Blueprint, so a Kubernetes Provider offers `kubeconfig` and an AWS Provider `aws-oidc`? | Not yet | |
+| Provider credential contract (G8): how is `provides_credential_types` set on a real Provider Blueprint, so a Kubernetes Provider offers `kubeconfig` and an AWS Provider `aws-oidc`? | 2026-11-18 | Kubernetes Provider form being built, before the beta; AWS Provider not answered |
+| Can a run create or update a credential or a Provider? | 2026-11-18 | No, not planned (G9) |
+| How does a Helm-deployed Resource get its address? | 2026-11-18 | Not reported; `shell` step output (G10) |
 | AWS Secrets Manager backend (FS-1937): when, and can a credential reference an existing secret in the customer's account (ARN) with the Provider's AWS role, rather than one Cycloid writes? | Not yet | |
 
 ## Comparison grid entries (K3s)
