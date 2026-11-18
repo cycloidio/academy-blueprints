@@ -85,6 +85,7 @@ Paths in the `cycloid` repository. Checked by hand where marked (checked); the r
 
 | # | Date | Step | Result | Settles / waits on |
 |---|---|---|---|---|
+| T2 | 2026-11-18 | Blueprint with one `terraform` step (`command: validate`), action `deploy`, in the alpha | Failed in 835 ms, `CY-DP-0004`: "the container runtime runs shell, helm and docker steps only; terraform step tf was not executed". The alpha runs the container runtime | Confirms G2 |
 | T1 | 2026-11-18 | Create a Kubernetes Provider in the alpha and add a kubeconfig to it | No kubeconfig option offered on the Provider; Secrets Manager not tried as a result | G8 |
 
 ## Blockers and product gaps
@@ -92,7 +93,7 @@ Paths in the `cycloid` repository. Checked by hand where marked (checked); the r
 | Gap | Seen at step | Waits on |
 |---|---|---|
 | G1. No Git source for step code: a `terraform` step has no way to get its code, a `helm` step only a chart URL | Code read, 2026-11-18 | Cycloid team (VCS access check, specs 04 §3). Blocks C3 as planned (cluster created by a `terraform` step from Blueprint code) |
-| G2. `terraform` steps do not run on the container runtime | Code read, 2026-11-18 | Which runtime the alpha uses (Cycloid team). If container: C3 cannot run a `terraform` step at all |
+| G2. `terraform` steps do not run on the container runtime | Code read; confirmed on the alpha by T2, 2026-11-18 | Cycloid team. The alpha runs the container runtime: no Blueprint can use a `terraform` step today, on either track (C3 cluster, VM, the C2 check of step 7) |
 | G3. No Terraform state backend from Cycloid; the plan assumed hosted state (K:43-47) | Code read, 2026-11-18 | Cycloid team |
 | G4. `helm upgrade` without `--install`: the same action cannot both create and update a release; the plan's M1 deploy then M2 update need two workflows (`deploy` = install, update = upgrade) | Code read, 2026-11-18 | Probe confirms; question to the Cycloid team (the usual pattern is `upgrade --install`) |
 | G5. `helm` step has no `version` parameter: the version must be in the chart reference | Code read, 2026-11-18 | Probe tests the OCI form `oci://...:<version>` |
@@ -104,7 +105,7 @@ Paths in the `cycloid` repository. Checked by hand where marked (checked); the r
 
 | Question | Asked | Answer |
 |---|---|---|
-| Which execution runtime does the alpha SaaS use (container, local)? Can a `terraform` step run there? | Not yet | |
+| When will `terraform` (and `ansible`) steps run on the container runtime the alpha uses (T2)? | Not yet | |
 | When does a Blueprint `source` (Git checkout of step code) become available? Until then, how is Terraform code meant to reach a `terraform` step? | Not yet | |
 | Does Cycloid provide Terraform state, or does the Blueprint bring its own backend? | Not yet | |
 | Should `helm upgrade` take `--install`, so one action creates and updates a release? | Not yet | |
