@@ -1,0 +1,25 @@
+id: academy-environment
+name: Academy environment
+description: A place where Resources are deployed, with its type and its colour.
+kind: environment
+environment_scope: global
+visibility: tenant
+
+property_schema:
+  - id: type
+    name: Type
+    description: production, staging, development, sandbox or custom.
+    type: string
+    required: true
+    indexed: true
+    display: catalog
+
+  - id: color
+    name: Colour
+    description: Hex colour shown beside the Environment's name.
+    type: string
+
+  - id: frozen
+    name: Frozen
+    description: When true, nothing can be created, changed or destroyed in this Environment.
+    type: bool

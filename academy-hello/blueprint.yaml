@@ -1,0 +1,60 @@
+id: academy-hello
+name: Academy hello
+description: A form and a create action that prints what you typed.
+categories: [demo]
+visibility: tenant
+environment_scope: required
+
+form:
+  content:
+    - id: greeting
+      name: Greeting
+      description: The text the run prints.
+      type: string
+      required: true
+      default: "Hello"
+
+    - id: times
+      name: How many times
+      type: string
+      allow_input: false
+      values: ["1", "3", "5"]
+      default: "3"
+
+actions:
+  - id: deploy
+    name: Deploy
+    trigger: manual
+    workflow: deploy
+  - id: destroy
+    name: Destroy
+    trigger: manual
+    workflow: destroy
+
+workflows:
+  deploy:
+    steps:
+      - id: hello
+        type: docker
+        params:
+          image: alpine:3.20
+          command:
+            - sh
+            - -c
+          args:
+            - 'i=0; while [ $i -lt $TIMES ]; do i=$((i+1)); echo "$GREETING from $TARGET ($i/$TIMES)"; sleep 1; done'
+          env:
+            TARGET: !jq .resource.name
+            GREETING: !jq .fields.greeting.value
+            TIMES: !jq .fields.times.value
+  destroy:
+    steps:
+      - id: teardown
+        type: docker
+        params:
+          image: alpine:3.20
+          command:
+            - sh
+            - -c
+          args:
+            - 'echo "Nothing to remove"'
