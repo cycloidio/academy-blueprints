@@ -14,6 +14,15 @@ Build plan: `k3s-first-path.md` and `track-assessment.md` (shared notes folder o
 |---|---|---|
 | 2026-11-18 | Code lives in `cycloidio/academy-app` and `cycloidio/academy-blueprints`, local clones in `~/Projects/` | Olivier |
 | 2026-11-18 | Publishing the catalog from the tester's own `academy-blueprints` is its own setup mission, never part of C1. C1 stays as specs/11 has it: `academy-app` only | Olivier |
+| 2026-11-18 | Q2: the Helm chart lives in `academy-app/chart/`, published by the CI to GHCR as an OCI artifact tagged with the commit SHA; `academy-app` is a simple Node app | Olivier |
+| 2026-11-18 | Q3: image and chart packages are public | Olivier |
+| 2026-11-18 | Q4: no CloudFormation nor any deploy tool bound to one cloud for the C2 role; Terraform asked about (open) | Olivier |
+| 2026-11-18 | Q5: the K3s Terraform is applied from a Cycloid Blueprint, never by hand: that is the day-1 target of the missions, and Olivier's own walk starts from it | Olivier |
+| 2026-11-18 | Q6: region, machine size and AWS account are chosen by the prospect in the Blueprint's form | Olivier |
+| 2026-11-18 | Q8: Node.js LTS, no runtime dependency, `node:test`, `node:http` | Olivier |
+| 2026-11-18 | C0: the public `cycloidio/academy-blueprints` populates the catalog in C0. Not working yet; the Cycloid team is implementing it | Olivier |
+| 2026-11-18 | C1 scaffolding: the platform team creates the repository for the developer, then a Blueprint sets up the app's technical stack in it | Olivier |
+| 2026-11-18 | First investigation, before any build: can the kubeconfig live in AWS Secrets Manager, so that the Kubernetes Provider finds it there | Olivier |
 
 ## Cycloid format references
 
@@ -87,6 +96,7 @@ Paths in the `cycloid` repository. Checked by hand where marked (checked); the r
 | G4. `helm upgrade` without `--install`: the same action cannot both create and update a release; the plan's M1 deploy then M2 update need two workflows (`deploy` = install, update = upgrade) | Code read, 2026-11-18 | Probe confirms; question to the Cycloid team (the usual pattern is `upgrade --install`) |
 | G5. `helm` step has no `version` parameter: the version must be in the chart reference | Code read, 2026-11-18 | Probe tests the OCI form `oci://...:<version>` |
 | G6. `aws-oidc` does not set `AWS_WEB_IDENTITY_TOKEN_FILE` | Code read, 2026-11-18 | Test at C2 (step 7) |
+| G7. AWS Secrets Manager as a credential store: in the specs (07/10 §6, Cycloid stores the ARN reference), not available in the code (`AVAILABLE_CREDENTIAL_BACKENDS` is `cycloid-db` only, external backends come with FS-1937). It is a tenant-level backend Cycloid writes to, so whether a credential can point at a secret the cluster's VM wrote in the prospect's account is not said | Code read, 2026-11-18 | Olivier's check in the alpha UI; Cycloid team (FS-1937 date, reference to an existing secret) |
 
 ## Questions for the Cycloid team
 
@@ -98,6 +108,7 @@ Paths in the `cycloid` repository. Checked by hand where marked (checked); the r
 | Should `helm upgrade` take `--install`, so one action creates and updates a release? | Not yet | |
 | How does `aws-oidc` reach the Terraform AWS provider (no `AWS_WEB_IDENTITY_TOKEN_FILE`)? | Not yet | |
 | How does a Blueprint source get into a workspace: bundle upload only, or a Git repository URL? | Not yet | |
+| AWS Secrets Manager backend (FS-1937): when, and can a credential reference an existing secret in the customer's account (ARN) with the Provider's AWS role, rather than one Cycloid writes? | Not yet | |
 
 ## Comparison grid entries (K3s)
 
