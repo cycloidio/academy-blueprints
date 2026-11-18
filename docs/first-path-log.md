@@ -28,6 +28,7 @@ Build plan: `k3s-first-path.md` and `track-assessment.md` (shared notes folder o
 | 2026-11-18 | D4: the VM writes a kubeconfig limited to the `academy` namespace into Secrets Manager; the person pastes it into the Environment's credentials in Cycloid | Olivier |
 | 2026-11-18 | D5: the app's address is a hostname through sslip.io (`<slug>.<vm-ip>.sslip.io` or similar) on K3s's Traefik; a `shell` step returns it as a Resource property | Olivier |
 | 2026-11-18 | C2 setup: one pasted AWS CLI block in AWS CloudShell (state bucket, permissions boundary, OIDC provider, `academy-` role), no Terraform; a second block removes it | Olivier |
+| 2026-11-18 | Both repositories keep `master` as their default branch; the missions' text says `master` where the plan says `main` | Olivier |
 | 2026-11-18 | First investigation, before any build: can the kubeconfig live in AWS Secrets Manager, so that the Kubernetes Provider finds it there | Olivier |
 
 ## Cycloid format references
