@@ -111,6 +111,7 @@ Beta date given: 7 Dec 2026, after the Academy launch of 1 Dec.
 
 | # | Date | Step | Result | Settles / waits on |
 |---|---|---|---|---|
+| B1 | 2026-11-18 | `academy-app` written (commit `b08c8e6`, local): Node 26 LTS app, `node:test`, Dockerfile on `node:26.13.1-alpine` by digest, non-root; Helm chart routed by hostname (`ingress.host`, Traefik); CI on `ubuntu-24.04` with `actions/checkout` v7.0.1 by SHA, `docker`, `helm`, no secret | Checked by Claude on a laptop: 5 tests pass, image builds and runs as uid 1000, page shows commit and environment; chart lints and renders with `alpine/helm:3.22.1` (the image of Cycloid's `helm` step). Not pushed; CI not run | D:828-837 |
 | T2 | 2026-11-18 | Blueprint with one `terraform` step (`command: validate`), action `deploy`, in the alpha | Failed in 835 ms, `CY-DP-0004`: "the container runtime runs shell, helm and docker steps only; terraform step tf was not executed". The alpha runs the container runtime | Confirms G2 |
 | T1 | 2026-11-18 | Create a Kubernetes Provider in the alpha and add a kubeconfig to it | No kubeconfig option offered on the Provider; Secrets Manager not tried as a result | G8 |
 
