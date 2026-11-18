@@ -85,6 +85,7 @@ Paths in the `cycloid` repository. Checked by hand where marked (checked); the r
 
 | # | Date | Step | Result | Settles / waits on |
 |---|---|---|---|---|
+| T1 | 2026-11-18 | Create a Kubernetes Provider in the alpha and add a kubeconfig to it | No kubeconfig option offered on the Provider; Secrets Manager not tried as a result | G8 |
 
 ## Blockers and product gaps
 
@@ -97,6 +98,7 @@ Paths in the `cycloid` repository. Checked by hand where marked (checked); the r
 | G5. `helm` step has no `version` parameter: the version must be in the chart reference | Code read, 2026-11-18 | Probe tests the OCI form `oci://...:<version>` |
 | G6. `aws-oidc` does not set `AWS_WEB_IDENTITY_TOKEN_FILE` | Code read, 2026-11-18 | Test at C2 (step 7) |
 | G7. AWS Secrets Manager as a credential store: in the specs (07/10 §6, Cycloid stores the ARN reference), not available in the code (`AVAILABLE_CREDENTIAL_BACKENDS` is `cycloid-db` only, external backends come with FS-1937). It is a tenant-level backend Cycloid writes to, so whether a credential can point at a secret the cluster's VM wrote in the prospect's account is not said | Code read, 2026-11-18 | Olivier's check in the alpha UI; Cycloid team (FS-1937 date, reference to an existing secret) |
+| G8. A Provider offers only the credential types its Provider Blueprint lists in `provides_credential_types`, plus the built-ins; plugin types such as `kubeconfig` (and `aws-oidc`) are filtered out otherwise. In the code, only test fixtures and mock providers set that list; no production path sets it from a Blueprint or a plugin (`apps/web/app/utils/credentialTypes.ts`, `packages/database/src/schema/blueprints.ts`, `packages/fixtures/src/loader.ts`). Explains T1 | T1, 2026-11-18 | Cycloid team. Real alternative in the credential hierarchy: a `kubeconfig` credential on the Environment (default resolution walk: Resource, Environment, Provider, Team, tenant), to test |
 
 ## Questions for the Cycloid team
 
@@ -108,6 +110,7 @@ Paths in the `cycloid` repository. Checked by hand where marked (checked); the r
 | Should `helm upgrade` take `--install`, so one action creates and updates a release? | Not yet | |
 | How does `aws-oidc` reach the Terraform AWS provider (no `AWS_WEB_IDENTITY_TOKEN_FILE`)? | Not yet | |
 | How does a Blueprint source get into a workspace: bundle upload only, or a Git repository URL? | Not yet | |
+| Provider credential contract (G8): how is `provides_credential_types` set on a real Provider Blueprint, so a Kubernetes Provider offers `kubeconfig` and an AWS Provider `aws-oidc`? | Not yet | |
 | AWS Secrets Manager backend (FS-1937): when, and can a credential reference an existing secret in the customer's account (ARN) with the Provider's AWS role, rather than one Cycloid writes? | Not yet | |
 
 ## Comparison grid entries (K3s)
