@@ -31,6 +31,7 @@ Build plan: `k3s-first-path.md` and `track-assessment.md` (shared notes folder o
 | 2026-11-19 | Every name a prospect sees in AWS or Kubernetes starts with `cycloid-academy`, so they know it comes from Cycloid: state bucket `cycloid-academy-tfstate-<account>`, state keys `cycloid-academy/clusters/<slug>/`, AWS resources and tags `cycloid-academy-<name>-...`, IAM test user `cycloid-academy` (unique per account only), Kubernetes namespace `cycloid-academy` (the plan says `academy`) and `cycloid-academy-welcome`, tag `cycloid-academy-cluster-v0.2.0`. Repository, folder and chart names unchanged (open) | Olivier |
 | 2026-11-19 | A copy of the `academy-app` template publishes to its own organisation's GitHub Packages, and everything copied takes the new service's name: the CI names the image and the chart after the repository; the M1 Blueprint takes the repository (`owner/name`) and builds the chart address from it | Olivier |
 | 2026-11-18 | Olivier's first C3 tests use an AWS access key on the `dev` Environment (test IAM user with a limited policy); OIDC (D3) stays the mission's way and replaces it once Cycloid's issuer, audience and subject are known | Olivier |
+| 2026-11-19 | Environment creation goes into **C0**, after the catalog is published from the public `cycloidio/academy-blueprints` (once Cycloid's Git sources work). Steps proposed for C0 (Claude's draft, for the plan): (1) add the Blueprint source, pinned to a tag, assigned to the team; (2) catalog → **Academy Environment** → name `dev`, type `development` → Create; the run log says "Environment dev is ready"; (3) the same for `prod`, type `production`; (4) check both in the Environments list. Open: where the `dev` → `prod` promotion of M3 is set up | Olivier |
 | 2026-11-19 | The tester creates two Environments in a mission, `dev` and `prod`, no `staging`, from the **Academy Environment** Blueprint (`academy-environment/blueprint.yaml`, v1 = Olivier's Blueprint published in the alpha) | Olivier |
 | 2026-11-18 | Both repositories keep `master` as their default branch; the missions' text says `master` where the plan says `main` | Olivier |
 | 2026-11-18 | First investigation, before any build: can the kubeconfig live in AWS Secrets Manager, so that the Kubernetes Provider finds it there | Olivier |
@@ -99,8 +100,8 @@ Beta date given: 7 Dec 2026, after the Academy launch of 1 Dec.
 
 ## Ideas to confirm with Olivier (not decisions)
 
-- **Environments created in a mission (2026-11-19).** Which Cx mission, and how the `dev` → `prod` promotion of M3
-  is set up, still open. The plan has the Environments come with the "Academy Build" workspace template instead
+- **Environments created in a mission (2026-11-19).** Decided: C0 (decisions table). How the `dev` → `prod`
+  promotion of M3 is set up, still open. The plan has the Environments come with the "Academy Build" workspace template instead
   (`dev`, `prod`, `previews`; D:1015, chain D:463; C3 and M1 deploy to `dev` D:337, D:407).
 - **GitHub repository Blueprint (2026-11-19).** Published by the Cycloid Ops team for every tenant; to try for C1. Its
   definition is needed to write the test.
@@ -128,6 +129,7 @@ Beta date given: 7 Dec 2026, after the Academy launch of 1 Dec.
 | T7 | 2026-11-19 | Probe "Deploy podinfo (OCI reference)" | **Success**: `oci://ghcr.io/stefanprodan/charts/podinfo:6.17.0` pulled, release `probe-oci` deployed. A version in the OCI reference works | G5 worked around: `oci://…:<version>` pins the chart |
 | T8 | 2026-11-19 | Cluster Resource after C3 | Properties shown: `shell` step outputs become Resource properties | G10 workaround works |
 | T9 | 2026-11-19 | GHCR packages `academy-app` and `charts/academy-app` made public by Olivier | Done | Q3 |
+| T14 | 2026-11-19 | Academy Environment v2 in the portal; `dev` (development) and `prod` (production) created | **Success**: short green run, both Environments exist | G16 worked around |
 | T13 | 2026-11-19 | Create `dev` from the Academy Environment Blueprint v1 (properties only, no action) | Resource created, run refused: "Workflow definition dispatches no steps; the action resolves to an empty workflow". Read in the code: a Blueprint with a `kind` always counts as deployable (`catalog.service.ts` `hasDeploymentLifecycle`), so creating it runs the `deploy` action; without one the workflow is empty. v2 adds a `deploy` action with one `shell` step that prints the Environment it created | G16 |
 | T12 | 2026-11-19 | M2 chosen change: cycloidio/academy-app#2 (service named after its repository, page shows a "Service" line). CI green on its branch (test, publish); marked ready for Olivier's review and merge | Waiting: merge, CI on `master`, then "Update" on `academy-app2` with the merge commit | M2 |
 | T11 | 2026-11-19 | M1 second try: `academy-app-kubernetes` (Environment optional) deployed as `academy-app2`, commit `5610f2d4…` | **Success**: chart pulled from `oci://ghcr.io/cycloidio/charts/academy-app:0.1.0-g5610f2d4…`, release deployed in `cycloid-academy`, app answers on `http://academy-app2-none.<ip>.sslip.io/` with "Hello from Cycloid Academy". The message typed in the form reaches the page (a first reading said it did not; Olivier's slip, corrected the same day) | M1 works end to end (catalog to running app), without Environment |
