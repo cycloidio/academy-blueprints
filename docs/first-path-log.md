@@ -165,6 +165,7 @@ Beta date given: 7 Dec 2026, after the Academy launch of 1 Dec.
 | G14. No Environment can be created yet in Olivier's alpha workspace (2026-11-19). M1 to M3 deploy to `dev` then `prod` | T10, 2026-11-19 | Cycloid team or Olivier (an Environment Blueprint, `kind: environment`) |
 | G15. Private registries: a prospect's packages are private by default and many organisations forbid public ones. The `helm` step cannot log in to a registry (Cycloid: "not planned yet"), so a private chart cannot be deployed; a private image would also need a pull secret in the chart. Today the two packages must be public | Olivier's question, 2026-11-19 | Cycloid team: private registry support in the `helm` step (to ask). Possible stopgap, real pattern, not built: a `shell` step on the helm image that runs `helm registry login` with a read token credential, then `helm upgrade --install` |
 | G16. Creating a Resource from a Blueprint with a `kind` (Environment) always runs its create action, and a create with no step is refused; a Blueprint with no action and no kind is "registered" without a run. An Environment, which runs nothing, needs a placeholder step | T13, 2026-11-19 | Cycloid team: should a kind-bearing Blueprint with no action be registered without a run? |
+| G17. A Blueprint's owner team and visibility are not read from its YAML: they are Blueprint settings in Cycloid, kept there even for a Blueprint synced from Git ("Metadata (name, description, icon, visibility, owner team) stays editable in Cycloid", `apps/web/app/components/BlueprintDefinitionEditor.vue`; the upload of a bundle sets neither). C0 must set them by hand per Blueprint, unless the catalog source's team assignment does it | Code read, 2026-11-19 | Cycloid team: can a Blueprint source set owner team and visibility for the Blueprints it brings? |
 
 ## Questions for the Cycloid team
 
@@ -182,6 +183,7 @@ Beta date given: 7 Dec 2026, after the Academy launch of 1 Dec.
 | For D3: Cycloid's OIDC issuer URL on the alpha, the audience value, and the subject claim format (to write the AWS trust policy) | Not yet | |
 | How does an app Blueprint read a property of another Resource (the cluster's IP, for the sslip.io hostname): a form source listing Resources, a relation in expressions, or a form field the person fills? | Not yet | |
 | When will the `helm` step support private registries (a credential for `helm registry login`, OCI or HTTP)? Prospects' GitHub packages are private by default (G15) | Not yet | |
+| Can a Blueprint source (C0) set the owner team and visibility of the Blueprints it brings, or must each be set by hand (G17)? | Not yet | |
 | AWS Secrets Manager backend (FS-1937): when, and can a credential reference an existing secret in the customer's account (ARN) with the Provider's AWS role, rather than one Cycloid writes? | Not yet | |
 
 ## Comparison grid entries (K3s)
