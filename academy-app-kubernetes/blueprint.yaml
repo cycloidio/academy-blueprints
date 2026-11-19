@@ -1,7 +1,10 @@
-# academy-app on Kubernetes (M1, M2): deploys the Helm chart academy-app's CI publishes to GHCR,
-# on the Academy cluster (C3), with the kubeconfig credential of that cluster.
+# A service made from the academy-app template, on Kubernetes (M1, M2): deploys the Helm chart its
+# CI publishes to the GitHub Packages of its own organisation, on the Academy cluster (C3), with
+# the kubeconfig credential of that cluster.
 #
-# The chart version names the commit: 0.1.0-g<commit> deploys the image of that commit.
+# Chart: oci://ghcr.io/<owner>/charts/<repository>:0.1.0-g<commit>, from the repository the person
+# names; that version deploys the image of the same commit.
+# The packages must be public: the helm step cannot log in to a private registry yet (G15).
 # The app answers on http://<release>-<environment>.<cluster IP>.sslip.io/ (decision D5).
 #
 # Until Cycloid answers how an app Blueprint reads another Resource's property, the person copies
@@ -31,6 +34,11 @@ actions:
     workflow: deploy
     form:
       content:
+        - id: repository
+          type: { string: { pattern: '^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9._-]*$' } }
+          name: GitHub repository
+          description: owner/name of the service's repository, in lowercase, for example cycloidio/academy-app.
+          required: true
         - id: commit
           type: { string: { pattern: '^[0-9a-f]{40}$' } }
           name: Commit to deploy
@@ -52,6 +60,11 @@ actions:
     workflow: update
     form:
       content:
+        - id: repository
+          type: { string: { pattern: '^[a-z0-9][a-z0-9-]*/[a-z0-9][a-z0-9._-]*$' } }
+          name: GitHub repository
+          description: owner/name of the service's repository, in lowercase, for example cycloidio/academy-app.
+          required: true
         - id: commit
           type: { string: { pattern: '^[0-9a-f]{40}$' } }
           name: Commit to deploy
@@ -82,7 +95,7 @@ workflows:
           command: install
           release: !jq '.resource.slug'
           namespace: cycloid-academy
-          chart: !tpl 'oci://ghcr.io/cycloidio/charts/academy-app:0.1.0-g($= fields.commit.value $)'
+          chart: !jq '"oci://ghcr.io/" + (.fields.repository.value | split("/")[0]) + "/charts/" + (.fields.repository.value | split("/")[1]) + ":0.1.0-g" + .fields.commit.value'
           values:
             ingress.host: !jq '.resource.slug + "-" + (.environment.slug // "none") + "." + .fields.hostname_suffix.value'
             environment: !jq '.environment.slug // "none"'
@@ -103,7 +116,7 @@ workflows:
           command: upgrade
           release: !jq '.resource.slug'
           namespace: cycloid-academy
-          chart: !tpl 'oci://ghcr.io/cycloidio/charts/academy-app:0.1.0-g($= fields.commit.value $)'
+          chart: !jq '"oci://ghcr.io/" + (.fields.repository.value | split("/")[0]) + "/charts/" + (.fields.repository.value | split("/")[1]) + ":0.1.0-g" + .fields.commit.value'
           values:
             ingress.host: !jq '.resource.slug + "-" + (.environment.slug // "none") + "." + .fields.hostname_suffix.value'
             environment: !jq '.environment.slug // "none"'

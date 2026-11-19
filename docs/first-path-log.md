@@ -29,6 +29,7 @@ Build plan: `k3s-first-path.md` and `track-assessment.md` (shared notes folder o
 | 2026-11-18 | D5: the app's address is a hostname through sslip.io (`<slug>.<vm-ip>.sslip.io` or similar) on K3s's Traefik; a `shell` step returns it as a Resource property | Olivier |
 | 2026-11-18 | C2 setup: one pasted AWS CLI block in AWS CloudShell (state bucket, permissions boundary, OIDC provider, `academy-` role), no Terraform; a second block removes it | Olivier |
 | 2026-11-19 | Every name a prospect sees in AWS or Kubernetes starts with `cycloid-academy`, so they know it comes from Cycloid: state bucket `cycloid-academy-tfstate-<account>`, state keys `cycloid-academy/clusters/<slug>/`, AWS resources and tags `cycloid-academy-<name>-...`, IAM test user `cycloid-academy` (unique per account only), Kubernetes namespace `cycloid-academy` (the plan says `academy`) and `cycloid-academy-welcome`, tag `cycloid-academy-cluster-v0.2.0`. Repository, folder and chart names unchanged (open) | Olivier |
+| 2026-11-19 | A copy of the `academy-app` template publishes to its own organisation's GitHub Packages, and everything copied takes the new service's name: the CI names the image and the chart after the repository; the M1 Blueprint takes the repository (`owner/name`) and builds the chart address from it | Olivier |
 | 2026-11-18 | Olivier's first C3 tests use an AWS access key on the `dev` Environment (test IAM user with a limited policy); OIDC (D3) stays the mission's way and replaces it once Cycloid's issuer, audience and subject are known | Olivier |
 | 2026-11-18 | Both repositories keep `master` as their default branch; the missions' text says `master` where the plan says `main` | Olivier |
 | 2026-11-18 | First investigation, before any build: can the kubeconfig live in AWS Secrets Manager, so that the Kubernetes Provider finds it there | Olivier |
@@ -150,6 +151,7 @@ Beta date given: 7 Dec 2026, after the Academy launch of 1 Dec.
 | G12. Organisation rulesets can forbid direct pushes to the default branch (cycloidio does: pull request with one approval). Any mission step that pushes to a prospect's default branch (the C1 scaffolding Blueprint's `git push`) fails under such a rule; pushing a branch and opening a pull request works under it | B2, 2026-11-18 | Olivier: design of the C1 scaffolding step |
 | G13. A credential cannot be added to an Environment in Olivier's alpha workspace (2026-11-19); the team works instead. The kubeconfig of each cluster will then sit on the team, and which one a step gets when the team holds two (two clusters) is not known yet | T4, 2026-11-19 | Cycloid team: Environment credentials; Kubernetes Provider form (before the beta) |
 | G14. No Environment can be created yet in Olivier's alpha workspace (2026-11-19). M1 to M3 deploy to `dev` then `prod` | T10, 2026-11-19 | Cycloid team or Olivier (an Environment Blueprint, `kind: environment`) |
+| G15. Private registries: a prospect's packages are private by default and many organisations forbid public ones. The `helm` step cannot log in to a registry (Cycloid: "not planned yet"), so a private chart cannot be deployed; a private image would also need a pull secret in the chart. Today the two packages must be public | Olivier's question, 2026-11-19 | Cycloid team: private registry support in the `helm` step (to ask). Possible stopgap, real pattern, not built: a `shell` step on the helm image that runs `helm registry login` with a read token credential, then `helm upgrade --install` |
 
 ## Questions for the Cycloid team
 
@@ -166,6 +168,7 @@ Beta date given: 7 Dec 2026, after the Academy launch of 1 Dec.
 | How does a Helm-deployed Resource get its address? | 2026-11-18 | Not reported; `shell` step output (G10) |
 | For D3: Cycloid's OIDC issuer URL on the alpha, the audience value, and the subject claim format (to write the AWS trust policy) | Not yet | |
 | How does an app Blueprint read a property of another Resource (the cluster's IP, for the sslip.io hostname): a form source listing Resources, a relation in expressions, or a form field the person fills? | Not yet | |
+| When will the `helm` step support private registries (a credential for `helm registry login`, OCI or HTTP)? Prospects' GitHub packages are private by default (G15) | Not yet | |
 | AWS Secrets Manager backend (FS-1937): when, and can a credential reference an existing secret in the customer's account (ARN) with the Provider's AWS role, rather than one Cycloid writes? | Not yet | |
 
 ## Comparison grid entries (K3s)
