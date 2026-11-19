@@ -31,6 +31,7 @@ Build plan: `k3s-first-path.md` and `track-assessment.md` (shared notes folder o
 | 2026-11-19 | Every name a prospect sees in AWS or Kubernetes starts with `cycloid-academy`, so they know it comes from Cycloid: state bucket `cycloid-academy-tfstate-<account>`, state keys `cycloid-academy/clusters/<slug>/`, AWS resources and tags `cycloid-academy-<name>-...`, IAM test user `cycloid-academy` (unique per account only), Kubernetes namespace `cycloid-academy` (the plan says `academy`) and `cycloid-academy-welcome`, tag `cycloid-academy-cluster-v0.2.0`. Repository, folder and chart names unchanged (open) | Olivier |
 | 2026-11-19 | A copy of the `academy-app` template publishes to its own organisation's GitHub Packages, and everything copied takes the new service's name: the CI names the image and the chart after the repository; the M1 Blueprint takes the repository (`owner/name`) and builds the chart address from it | Olivier |
 | 2026-11-18 | Olivier's first C3 tests use an AWS access key on the `dev` Environment (test IAM user with a limited policy); OIDC (D3) stays the mission's way and replaces it once Cycloid's issuer, audience and subject are known | Olivier |
+| 2026-11-19 | The tester creates two Environments in a mission, `dev` and `prod`, no `staging`, from the **Academy Environment** Blueprint (`academy-environment/blueprint.yaml`, v1 = Olivier's Blueprint published in the alpha) | Olivier |
 | 2026-11-18 | Both repositories keep `master` as their default branch; the missions' text says `master` where the plan says `main` | Olivier |
 | 2026-11-18 | First investigation, before any build: can the kubeconfig live in AWS Secrets Manager, so that the Kubernetes Provider finds it there | Olivier |
 
@@ -98,11 +99,9 @@ Beta date given: 7 Dec 2026, after the Academy launch of 1 Dec.
 
 ## Ideas to confirm with Olivier (not decisions)
 
-- **Environments created in a mission (2026-11-19).** Olivier proposes a Cx mission where the tester creates `dev`,
-  `prod` (and maybe `staging`) from the Environment Blueprint, which he published in his workspace that day. The plan
-  has them come with the "Academy Build" workspace template instead (`dev`, `prod`, `previews`; D:1015, chain
-  `dev` → `prod` D:463, C3 and M1 deploy to `dev` D:337, D:407). Claude's advice: `dev` and `prod` only, no `staging`;
-  before C3. Olivier's call.
+- **Environments created in a mission (2026-11-19).** Which Cx mission, and how the `dev` → `prod` promotion of M3
+  is set up, still open. The plan has the Environments come with the "Academy Build" workspace template instead
+  (`dev`, `prod`, `previews`; D:1015, chain D:463; C3 and M1 deploy to `dev` D:337, D:407).
 - **GitHub repository Blueprint (2026-11-19).** Published by the Cycloid Ops team for every tenant; to try for C1. Its
   definition is needed to write the test.
 

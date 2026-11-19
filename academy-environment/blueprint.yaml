@@ -1,0 +1,25 @@
+# Academy Environment (v1, from Olivier's Blueprint published in the alpha on 2026-11-19).
+# An Environment is a Resource of kind `environment`: apps are deployed into it.
+# The missions create two (decision 2026-11-19): `dev` (type development) and `prod` (type production).
+id: academy-environment
+kind: environment
+name: Academy Environment
+visibility: tenant
+description: A place where Resources are deployed, with its type and its colour.
+property_schema:
+  - id: type
+    name: Type
+    type: string
+    display: catalog
+    indexed: true
+    required: true
+    description: production, staging, development, sandbox or custom.
+  - id: color
+    name: Colour
+    type: string
+    description: Hex colour shown beside the Environment's name.
+  - id: frozen
+    name: Frozen
+    type: bool
+    description: When true, nothing can be created, changed or destroyed in this Environment.
+environment_scope: global
