@@ -8,13 +8,13 @@ REMOVE_BUCKET=no
 set -eu
 ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
 BUCKET="cycloid-academy-tfstate-$ACCOUNT"
-USER=cycloid-academy-test-c3
+USER=cycloid-academy
 
 if aws iam get-user --user-name "$USER" >/dev/null 2>&1; then
   for key in $(aws iam list-access-keys --user-name "$USER" --query 'AccessKeyMetadata[].AccessKeyId' --output text); do
     aws iam delete-access-key --user-name "$USER" --access-key-id "$key"
   done
-  aws iam delete-user-policy --user-name "$USER" --policy-name cycloid-academy-test-c3 2>/dev/null || true
+  aws iam delete-user-policy --user-name "$USER" --policy-name cycloid-academy 2>/dev/null || true
   aws iam delete-user --user-name "$USER"
   echo "Removed $USER and its access keys."
 fi
