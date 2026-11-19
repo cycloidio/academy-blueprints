@@ -1,0 +1,125 @@
+# academy-app on Kubernetes (M1, M2): deploys the Helm chart academy-app's CI publishes to GHCR,
+# on the Academy cluster (C3), with the kubeconfig credential of that cluster.
+#
+# The chart version names the commit: 0.1.0-g<commit> deploys the image of that commit.
+# The app answers on http://<release>-<environment>.<cluster IP>.sslip.io/ (decision D5).
+#
+# Until Cycloid answers how an app Blueprint reads another Resource's property, the person copies
+# the cluster's "App hostname suffix" into the form. The helm step reports no address, so a small
+# shell step returns it as a Resource property.
+# The helm step runs `upgrade` without `--install`: "Deploy" installs, "Update" upgrades.
+
+credentials:
+  - id: cluster
+    type: kubeconfig
+    description: Access to the cycloid-academy namespace of the Academy cluster
+
+property_schema:
+  - { id: url, name: App address, type: string, display: catalog }
+  - { id: app_ref, name: Commit deployed, type: string, display: catalog, promotes_as: app_ref }
+
+actions:
+  - id: deploy
+    name: Deploy
+    trigger: manual
+    workflow: deploy
+    form:
+      content:
+        - id: commit
+          type: { string: { pattern: '^[0-9a-f]{40}$' } }
+          name: Commit to deploy
+          description: The full commit SHA of academy-app whose CI run is green (the head of master for a first deploy).
+          required: true
+        - id: hostname_suffix
+          type: { string: { pattern: '^[0-9]{1,3}(\.[0-9]{1,3}){3}\.sslip\.io$' } }
+          name: Cluster hostname suffix
+          description: Copy "App hostname suffix" from your Academy cluster, for example 203.0.113.10.sslip.io.
+          required: true
+        - id: message
+          type: string
+          name: Message
+          description: The title of the page.
+          default: Hello from Cycloid Academy
+  - id: update
+    name: Update
+    trigger: manual
+    workflow: update
+    form:
+      content:
+        - id: commit
+          type: { string: { pattern: '^[0-9a-f]{40}$' } }
+          name: Commit to deploy
+          description: The full commit SHA of academy-app whose CI run is green (the head of master for a first deploy).
+          required: true
+        - id: hostname_suffix
+          type: { string: { pattern: '^[0-9]{1,3}(\.[0-9]{1,3}){3}\.sslip\.io$' } }
+          name: Cluster hostname suffix
+          description: Copy "App hostname suffix" from your Academy cluster, for example 203.0.113.10.sslip.io.
+          required: true
+        - id: message
+          type: string
+          name: Message
+          description: The title of the page.
+          default: Hello from Cycloid Academy
+  - id: destroy
+    name: Remove
+    trigger: manual
+    workflow: destroy
+
+workflows:
+  deploy:
+    steps:
+      - id: helm
+        type: helm
+        timeout: 300
+        params:
+          command: install
+          release: !jq '.resource.slug'
+          namespace: cycloid-academy
+          chart: !tpl 'oci://ghcr.io/cycloidio/charts/academy-app:0.1.0-g($= fields.commit.value $)'
+          values:
+            ingress.host: !tpl '($= resource.slug $)-($= environment.slug $).($= fields.hostname_suffix.value $)'
+            environment: !jq '.environment.slug'
+            message: !jq '.fields.message.value'
+      - id: address
+        type: shell
+        depends_on: [helm]
+        outputs: [url, app_ref]
+        params:
+          image: alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+          script: !tpl |
+            set -eu
+            echo "url=http://($= resource.slug $)-($= environment.slug $).($= fields.hostname_suffix.value $)/" >> "$CYCLOID_OUTPUT"
+            echo "app_ref=($= fields.commit.value $)" >> "$CYCLOID_OUTPUT"
+  update:
+    steps:
+      - id: helm
+        type: helm
+        timeout: 300
+        params:
+          command: upgrade
+          release: !jq '.resource.slug'
+          namespace: cycloid-academy
+          chart: !tpl 'oci://ghcr.io/cycloidio/charts/academy-app:0.1.0-g($= fields.commit.value $)'
+          values:
+            ingress.host: !tpl '($= resource.slug $)-($= environment.slug $).($= fields.hostname_suffix.value $)'
+            environment: !jq '.environment.slug'
+            message: !jq '.fields.message.value'
+      - id: address
+        type: shell
+        depends_on: [helm]
+        outputs: [url, app_ref]
+        params:
+          image: alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+          script: !tpl |
+            set -eu
+            echo "url=http://($= resource.slug $)-($= environment.slug $).($= fields.hostname_suffix.value $)/" >> "$CYCLOID_OUTPUT"
+            echo "app_ref=($= fields.commit.value $)" >> "$CYCLOID_OUTPUT"
+  destroy:
+    steps:
+      - id: helm
+        type: helm
+        params:
+          command: uninstall
+          release: !jq '.resource.slug'
+          namespace: cycloid-academy
