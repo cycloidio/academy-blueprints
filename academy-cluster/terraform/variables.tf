@@ -1,5 +1,5 @@
 variable "name" {
-  description = "Name of the cluster, from the Resource slug. AWS names are academy-<name>-..."
+  description = "Name of the cluster, from the Resource slug. AWS names are cycloid-academy-<name>-..."
   type        = string
 
   validation {

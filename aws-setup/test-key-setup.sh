@@ -2,9 +2,9 @@
 # Blueprint, before Cycloid's OIDC details are known (decision D3 keeps OIDC for the missions).
 #
 # Paste into AWS CloudShell, in the TEST account, after setting REGION. It creates:
-#   - the S3 bucket academy-tfstate-<account> (versioned, encrypted, no public access)
-#   - the IAM user academy-test-c3, limited to EC2 in REGION, academy-* roles and instance
-#     profiles, academy-* secrets in REGION and the state bucket
+#   - the S3 bucket cycloid-academy-tfstate-<account> (versioned, encrypted, no public access)
+#   - the IAM user cycloid-academy-test-c3, limited to EC2 in REGION, cycloid-academy-* roles and instance
+#     profiles, cycloid-academy-* secrets in REGION and the state bucket
 #   - one access key for that user, printed once: paste it into the `dev` Environment's
 #     credentials in Cycloid (type AWS access key), never into a chat or a file.
 # Run test-key-remove.sh to undo it. Running this twice is harmless; it never prints a second key
@@ -14,8 +14,8 @@ REGION=eu-west-1
 
 set -eu
 ACCOUNT=$(aws sts get-caller-identity --query Account --output text)
-BUCKET="academy-tfstate-$ACCOUNT"
-USER=academy-test-c3
+BUCKET="cycloid-academy-tfstate-$ACCOUNT"
+USER=cycloid-academy-test-c3
 
 # --- State bucket --------------------------------------------------------------------------------
 if ! aws s3api head-bucket --bucket "$BUCKET" 2>/dev/null; then
@@ -34,9 +34,9 @@ aws s3api put-bucket-encryption --bucket "$BUCKET" --server-side-encryption-conf
 
 # --- Test user and its permissions ---------------------------------------------------------------
 aws iam get-user --user-name "$USER" >/dev/null 2>&1 || aws iam create-user --user-name "$USER" \
-  --tags Key=academy,Value=true >/dev/null
+  --tags Key=cycloid-academy,Value=true >/dev/null
 
-cat > /tmp/academy-test-c3-policy.json <<EOF
+cat > /tmp/cycloid-academy-test-c3-policy.json <<EOF
 {
   "Version": "2012-10-17",
   "Statement": [
@@ -59,15 +59,15 @@ cat > /tmp/academy-test-c3-policy.json <<EOF
         "iam:PassRole"
       ],
       "Resource": [
-        "arn:aws:iam::$ACCOUNT:role/academy-*",
-        "arn:aws:iam::$ACCOUNT:instance-profile/academy-*"
+        "arn:aws:iam::$ACCOUNT:role/cycloid-academy-*",
+        "arn:aws:iam::$ACCOUNT:instance-profile/cycloid-academy-*"
       ]
     },
     {
       "Sid": "AcademySecrets",
       "Effect": "Allow",
       "Action": "secretsmanager:*",
-      "Resource": "arn:aws:secretsmanager:$REGION:$ACCOUNT:secret:academy-*"
+      "Resource": "arn:aws:secretsmanager:$REGION:$ACCOUNT:secret:cycloid-academy-*"
     },
     {
       "Sid": "StateBucket",
@@ -79,14 +79,14 @@ cat > /tmp/academy-test-c3-policy.json <<EOF
       "Sid": "StateObjects",
       "Effect": "Allow",
       "Action": ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"],
-      "Resource": "arn:aws:s3:::$BUCKET/academy/*"
+      "Resource": "arn:aws:s3:::$BUCKET/cycloid-academy/*"
     }
   ]
 }
 EOF
-aws iam put-user-policy --user-name "$USER" --policy-name academy-test-c3 \
-  --policy-document file:///tmp/academy-test-c3-policy.json
-rm -f /tmp/academy-test-c3-policy.json
+aws iam put-user-policy --user-name "$USER" --policy-name cycloid-academy-test-c3 \
+  --policy-document file:///tmp/cycloid-academy-test-c3-policy.json
+rm -f /tmp/cycloid-academy-test-c3-policy.json
 
 # --- Access key, printed once --------------------------------------------------------------------
 if [ "$(aws iam list-access-keys --user-name "$USER" --query 'length(AccessKeyMetadata)' --output text)" = 0 ]; then

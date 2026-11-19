@@ -1,9 +1,9 @@
-# The kubeconfig of the `academy` namespace. Created empty: the machine writes its value at first
+# The kubeconfig of the `cycloid-academy` namespace. Created empty: the machine writes its value at first
 # boot, so the kubeconfig never goes through Terraform or its state. No recovery window, so
 # removing the cluster leaves nothing behind.
 resource "aws_secretsmanager_secret" "kubeconfig" {
-  name                    = "academy-${var.name}-kubeconfig"
-  description             = "Kubeconfig of the academy namespace of the Academy cluster ${var.name}, written by the machine"
+  name                    = "cycloid-academy-${var.name}-kubeconfig"
+  description             = "Kubeconfig of the cycloid-academy namespace of the Academy cluster ${var.name}, written by the machine"
   recovery_window_in_days = 0
 }
 
@@ -26,7 +26,7 @@ data "aws_iam_policy_document" "node" {
 }
 
 resource "aws_iam_role" "node" {
-  name                 = "academy-${var.name}-node"
+  name                 = "cycloid-academy-${var.name}-node"
   assume_role_policy   = data.aws_iam_policy_document.node_assume.json
   permissions_boundary = var.permissions_boundary_arn
 }
@@ -38,6 +38,6 @@ resource "aws_iam_role_policy" "node" {
 }
 
 resource "aws_iam_instance_profile" "node" {
-  name = "academy-${var.name}-node"
+  name = "cycloid-academy-${var.name}-node"
   role = aws_iam_role.node.name
 }

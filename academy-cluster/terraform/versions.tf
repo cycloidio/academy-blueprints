@@ -19,8 +19,8 @@ provider "aws" {
 
   default_tags {
     tags = {
-      "academy"         = "true"
-      "academy:cluster" = var.name
+      "cycloid-academy"         = "true"
+      "cycloid-academy:cluster" = var.name
     }
   }
 }

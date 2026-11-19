@@ -10,13 +10,13 @@ resource "aws_vpc" "this" {
   enable_dns_support   = true
   enable_dns_hostnames = true
 
-  tags = { Name = "academy-${var.name}" }
+  tags = { Name = "cycloid-academy-${var.name}" }
 }
 
 resource "aws_internet_gateway" "this" {
   vpc_id = aws_vpc.this.id
 
-  tags = { Name = "academy-${var.name}" }
+  tags = { Name = "cycloid-academy-${var.name}" }
 }
 
 resource "aws_subnet" "public" {
@@ -24,7 +24,7 @@ resource "aws_subnet" "public" {
   cidr_block        = "10.0.1.0/24"
   availability_zone = data.aws_availability_zones.available.names[0]
 
-  tags = { Name = "academy-${var.name}-public" }
+  tags = { Name = "cycloid-academy-${var.name}-public" }
 }
 
 resource "aws_route_table" "public" {
@@ -35,7 +35,7 @@ resource "aws_route_table" "public" {
     gateway_id = aws_internet_gateway.this.id
   }
 
-  tags = { Name = "academy-${var.name}-public" }
+  tags = { Name = "cycloid-academy-${var.name}-public" }
 }
 
 resource "aws_route_table_association" "public" {
@@ -46,11 +46,11 @@ resource "aws_route_table_association" "public" {
 # Web ports for the apps, and the Kubernetes API for Cycloid's runners, which reach public
 # addresses only. Nothing else: no SSH, no key pair.
 resource "aws_security_group" "node" {
-  name        = "academy-${var.name}-node"
+  name        = "cycloid-academy-${var.name}-node"
   description = "Academy cluster: web ports and Kubernetes API"
   vpc_id      = aws_vpc.this.id
 
-  tags = { Name = "academy-${var.name}-node" }
+  tags = { Name = "cycloid-academy-${var.name}-node" }
 }
 
 resource "aws_vpc_security_group_ingress_rule" "node" {
@@ -75,7 +75,7 @@ resource "aws_vpc_security_group_egress_rule" "node" {
 resource "aws_eip" "node" {
   domain = "vpc"
 
-  tags = { Name = "academy-${var.name}" }
+  tags = { Name = "cycloid-academy-${var.name}" }
 
   depends_on = [aws_internet_gateway.this]
 }

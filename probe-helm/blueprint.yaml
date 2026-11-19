@@ -5,7 +5,7 @@
 # Credential and helm parameters taken from the cycloid repository code (helm step parameter schema,
 # Blueprint credential declaration, kubeconfig credential type), not from the illustrative spec examples.
 #
-# Needs: the namespace `academy` exists on the cluster (the kubeconfig is limited to it, so the step
+# Needs: the namespace `cycloid-academy` exists on the cluster (the kubeconfig is limited to it, so the step
 # does not create it), and a credential of type `kubeconfig` reachable from the Resource (default
 # walk: Resource, Environment, Provider linked to the Environment, Team).
 #
@@ -16,7 +16,7 @@
 credentials:
   - id: cluster
     type: kubeconfig
-    description: Access to the academy namespace of the cluster
+    description: Access to the cycloid-academy namespace of the cluster
 
 actions:
   # A plain HTTPS chart archive: the most certain form for helm.
@@ -52,7 +52,7 @@ workflows:
         params:
           command: install
           release: probe
-          namespace: academy
+          namespace: cycloid-academy
           chart: https://stefanprodan.github.io/podinfo/podinfo-6.17.0.tgz
           values:
             ui.message: !jq '"Hello from " + .resource.name'
@@ -65,7 +65,7 @@ workflows:
         params:
           command: upgrade
           release: probe
-          namespace: academy
+          namespace: cycloid-academy
           chart: https://stefanprodan.github.io/podinfo/podinfo-6.17.0.tgz
           values:
             ui.message: !jq '"Updated: " + .resource.name'
@@ -77,7 +77,7 @@ workflows:
         params:
           command: uninstall
           release: probe
-          namespace: academy
+          namespace: cycloid-academy
   deploy-oci:
     steps:
       - id: install
@@ -86,7 +86,7 @@ workflows:
         params:
           command: install
           release: probe-oci
-          namespace: academy
+          namespace: cycloid-academy
           chart: oci://ghcr.io/stefanprodan/charts/podinfo:6.17.0
           values:
             ui.message: !jq '"Hello from " + .resource.name + " (OCI)"'
@@ -98,4 +98,4 @@ workflows:
         params:
           command: uninstall
           release: probe-oci
-          namespace: academy
+          namespace: cycloid-academy

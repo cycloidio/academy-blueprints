@@ -14,7 +14,7 @@ output "hostname_suffix" {
 }
 
 output "kubeconfig_secret_name" {
-  description = "Secrets Manager secret holding the kubeconfig of the academy namespace."
+  description = "Secrets Manager secret holding the kubeconfig of the cycloid-academy namespace."
   value       = aws_secretsmanager_secret.kubeconfig.name
 }
 

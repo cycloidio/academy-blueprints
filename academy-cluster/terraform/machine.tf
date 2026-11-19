@@ -46,7 +46,7 @@ resource "aws_instance" "node" {
     welcome_image      = var.welcome_image
   })
 
-  tags = { Name = "academy-${var.name}" }
+  tags = { Name = "cycloid-academy-${var.name}" }
 
   lifecycle {
     # A newer Ubuntu image must not replace a running cluster.

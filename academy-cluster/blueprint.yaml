@@ -7,7 +7,7 @@
 #
 # AWS access: Cycloid's OIDC token when the Environment has an `aws-oidc` credential (D3);
 # otherwise an `aws-access-key` credential, for Olivier's first tests only, never in a mission.
-# Terraform state: the S3 bucket academy-tfstate-<account> created in C2, in the cluster's region (D2).
+# Terraform state: the S3 bucket cycloid-academy-tfstate-<account> created in C2, in the cluster's region (D2).
 # The kubeconfig: the machine writes it to Secrets Manager; a person pastes it into the
 # Environment's credentials (Cycloid cannot create a credential from a run).
 
@@ -74,7 +74,7 @@ workflows:
             SIZE='($= fields.instance_type.value $)'
             ACCOUNT_INPUT='($= fields.aws_account_id.value ?? "" $)'
             REPO=https://github.com/cycloidio/academy-blueprints
-            REF=academy-cluster-v0.1.0
+            REF=cycloid-academy-cluster-v0.2.0
 
             # AWS access: the OIDC token, exchanged by the AWS SDK for the C2 role; else the key.
             if [ -n "${CYCLOID_OIDC_TOKEN:-}" ]; then
@@ -88,13 +88,13 @@ workflows:
               exit 1
             fi
             [ -n "$ACCOUNT" ] || { echo "AWS account ID missing." >&2; exit 1; }
-            BUCKET="academy-tfstate-$ACCOUNT"
+            BUCKET="cycloid-academy-tfstate-$ACCOUNT"
 
             git clone -q --depth 1 --branch "$REF" "$REPO" /tmp/src
             cd /tmp/src/academy-cluster/terraform
             terraform init -input=false -no-color \
               -backend-config="bucket=$BUCKET" \
-              -backend-config="key=academy/clusters/$NAME/terraform.tfstate" \
+              -backend-config="key=cycloid-academy/clusters/$NAME/terraform.tfstate" \
               -backend-config="region=$REGION" \
               -backend-config="use_lockfile=true"
             terraform apply -input=false -no-color -auto-approve \
@@ -105,7 +105,7 @@ workflows:
             i=0
             until wget -q -T 5 -O - "http://$IP/" 2>/dev/null | grep -q 'Your cluster is ready'; do
               i=$((i + 1))
-              [ "$i" -lt 90 ] || { echo "The cluster did not get ready in 15 minutes: see /var/log/academy-first-boot.log on the machine." >&2; exit 1; }
+              [ "$i" -lt 90 ] || { echo "The cluster did not get ready in 15 minutes: see /var/log/cycloid-academy-first-boot.log on the machine." >&2; exit 1; }
               sleep 10
             done
             echo "Cluster ready."
@@ -132,7 +132,7 @@ workflows:
             REGION='($= resource.properties.region $)'
             BUCKET='($= resource.properties.state_bucket $)'
             REPO=https://github.com/cycloidio/academy-blueprints
-            REF=academy-cluster-v0.1.0
+            REF=cycloid-academy-cluster-v0.2.0
 
             if [ -n "${CYCLOID_OIDC_TOKEN:-}" ]; then
               printf '%s' "$CYCLOID_OIDC_TOKEN" > /tmp/oidc-token
@@ -143,7 +143,7 @@ workflows:
             cd /tmp/src/academy-cluster/terraform
             terraform init -input=false -no-color \
               -backend-config="bucket=$BUCKET" \
-              -backend-config="key=academy/clusters/$NAME/terraform.tfstate" \
+              -backend-config="key=cycloid-academy/clusters/$NAME/terraform.tfstate" \
               -backend-config="region=$REGION" \
               -backend-config="use_lockfile=true"
             terraform destroy -input=false -no-color -auto-approve \
