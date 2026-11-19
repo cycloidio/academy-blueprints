@@ -12,16 +12,22 @@
 # shell step returns it as a Resource property.
 # The helm step runs `upgrade` without `--install`: "Deploy" installs, "Update" upgrades.
 
-# An app runs in an Environment (dev, then prod): its name is part of the address.
-# TEMPORARY: Olivier's workspace has no Environment yet (2026-11-19), so the Environment is
-# optional and the address uses "none" without one. Set `environment_scope: required` and drop
-# the `// "none"` fallbacks once Environments exist.
-environment_scope: optional
+# An app runs in an Environment (`dev`, then `prod` by promotion): its name is part of the address.
+environment_scope: required
 
 credentials:
   - id: cluster
     type: kubeconfig
     description: Access to the cycloid-academy namespace of the Academy cluster
+
+# The app depends on the Academy cluster it runs on. Cycloid gives the team that owns the app
+# read-only access to that cluster through this link (cycloid specs 02/11 §5.10), and a step
+# looks for a credential (the kubeconfig) on the linked cluster after the app's own Resource.
+relations:
+  - type: depends_on
+    direction: outgoing
+    cardinality: one
+    target_blueprint_types: [academy-cluster]
 
 property_schema:
   - { id: url, name: App address, type: string, display: catalog }

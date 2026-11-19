@@ -11,6 +11,9 @@
 # The kubeconfig: the machine writes it to Secrets Manager; a person pastes it into the
 # Environment's credentials (Cycloid cannot create a credential from a run).
 
+# Created by the Platform Team in the `dev` Environment, which holds the AWS credential.
+environment_scope: required
+
 credentials:
   - id: aws_oidc
     type: aws-oidc
