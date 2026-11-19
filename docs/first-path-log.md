@@ -140,7 +140,7 @@ Beta date given: 7 Dec 2026, after the Academy launch of 1 Dec.
 | G10. A `helm` step reports no address; the Resource gets one only from a `shell` step output | Cycloid team, 2026-11-18 | Not planned |
 | G11. A pasted kubeconfig is checked only for being non-empty, no connection test | Cycloid team, 2026-11-18 | Not planned |
 | G12. Organisation rulesets can forbid direct pushes to the default branch (cycloidio does: pull request with one approval). Any mission step that pushes to a prospect's default branch (the C1 scaffolding Blueprint's `git push`) fails under such a rule; pushing a branch and opening a pull request works under it | B2, 2026-11-18 | Olivier: design of the C1 scaffolding step |
-| G13. A credential cannot be added to an Environment in Olivier's alpha workspace (2026-11-19); the team works instead. The kubeconfig of each cluster will then sit on the team, so two clusters for one team cannot coexist (two `kubeconfig` credentials at the same level) | T4, 2026-11-19 | Cycloid team: Environment credentials; Kubernetes Provider form (before the beta) |
+| G13. A credential cannot be added to an Environment in Olivier's alpha workspace (2026-11-19); the team works instead. The kubeconfig of each cluster will then sit on the team, and which one a step gets when the team holds two (two clusters) is not known yet | T4, 2026-11-19 | Cycloid team: Environment credentials; Kubernetes Provider form (before the beta) |
 
 ## Questions for the Cycloid team
 
