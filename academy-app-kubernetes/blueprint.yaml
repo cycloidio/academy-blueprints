@@ -9,6 +9,9 @@
 # shell step returns it as a Resource property.
 # The helm step runs `upgrade` without `--install`: "Deploy" installs, "Update" upgrades.
 
+# An app runs in an Environment (dev, then prod): its name is part of the address.
+environment_scope: required
+
 credentials:
   - id: cluster
     type: kubeconfig
