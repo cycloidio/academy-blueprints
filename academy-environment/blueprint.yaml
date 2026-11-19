@@ -1,11 +1,17 @@
-# Academy Environment (v1, from Olivier's Blueprint published in the alpha on 2026-11-19).
+# Academy Environment (v2; v1 was Olivier's Blueprint published in the alpha on 2026-11-19).
 # An Environment is a Resource of kind `environment`: apps are deployed into it.
 # The missions create two (decision 2026-11-19): `dev` (type development) and `prod` (type production).
+#
+# Cycloid always runs the create action of a Blueprint that has a `kind`: creating an Environment
+# is a deploy, and a deploy with no step is refused ("the action resolves to an empty workflow").
+# So the create action runs one short step that records what was created (gap G16).
 id: academy-environment
 kind: environment
 name: Academy Environment
 visibility: tenant
 description: A place where Resources are deployed, with its type and its colour.
+environment_scope: global
+
 property_schema:
   - id: type
     name: Type
@@ -22,4 +28,19 @@ property_schema:
     name: Frozen
     type: bool
     description: When true, nothing can be created, changed or destroyed in this Environment.
-environment_scope: global
+
+actions:
+  - id: deploy
+    name: Create the Environment
+    trigger: manual
+    workflow: deploy
+
+workflows:
+  deploy:
+    steps:
+      - id: record
+        type: shell
+        params:
+          image: alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
+          # The slug only: it is lowercase letters, digits and hyphens, safe in a shell line.
+          script: !jq '"echo \"Environment " + .resource.slug + " is ready: apps can now be deployed into it.\""'
