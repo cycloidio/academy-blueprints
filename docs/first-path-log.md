@@ -98,6 +98,14 @@ Beta date given: 7 Dec 2026, after the Academy launch of 1 Dec.
 
 ## Ideas to confirm with Olivier (not decisions)
 
+- **Environments created in a mission (2026-11-19).** Olivier proposes a Cx mission where the tester creates `dev`,
+  `prod` (and maybe `staging`) from the Environment Blueprint, which he published in his workspace that day. The plan
+  has them come with the "Academy Build" workspace template instead (`dev`, `prod`, `previews`; D:1015, chain
+  `dev` → `prod` D:463, C3 and M1 deploy to `dev` D:337, D:407). Claude's advice: `dev` and `prod` only, no `staging`;
+  before C3. Olivier's call.
+- **GitHub repository Blueprint (2026-11-19).** Published by the Cycloid Ops team for every tenant; to try for C1. Its
+  definition is needed to write the test.
+
 - **C0, public catalog source.** The catalog comes from the public `cycloidio/academy-blueprints` added as a Blueprint
   source, with no Git connection. To observe: a source accepts a plain public repository URL; a source can be pinned
   to a tag; assigning it to the team works.
