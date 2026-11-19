@@ -10,7 +10,10 @@
 # The helm step runs `upgrade` without `--install`: "Deploy" installs, "Update" upgrades.
 
 # An app runs in an Environment (dev, then prod): its name is part of the address.
-environment_scope: required
+# TEMPORARY: Olivier's workspace has no Environment yet (2026-11-19), so the Environment is
+# optional and the address uses "none" without one. Set `environment_scope: required` and drop
+# the `// "none"` fallbacks once Environments exist.
+environment_scope: optional
 
 credentials:
   - id: cluster
@@ -81,8 +84,8 @@ workflows:
           namespace: cycloid-academy
           chart: !tpl 'oci://ghcr.io/cycloidio/charts/academy-app:0.1.0-g($= fields.commit.value $)'
           values:
-            ingress.host: !tpl '($= resource.slug $)-($= environment.slug $).($= fields.hostname_suffix.value $)'
-            environment: !jq '.environment.slug'
+            ingress.host: !jq '.resource.slug + "-" + (.environment.slug // "none") + "." + .fields.hostname_suffix.value'
+            environment: !jq '.environment.slug // "none"'
             message: !jq '.fields.message.value'
       - id: address
         type: shell
@@ -90,10 +93,7 @@ workflows:
         outputs: [url, app_ref]
         params:
           image: alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
-          script: !tpl |
-            set -eu
-            echo "url=http://($= resource.slug $)-($= environment.slug $).($= fields.hostname_suffix.value $)/" >> "$CYCLOID_OUTPUT"
-            echo "app_ref=($= fields.commit.value $)" >> "$CYCLOID_OUTPUT"
+          script: !jq '"set -eu\necho \"url=http://" + .resource.slug + "-" + (.environment.slug // "none") + "." + .fields.hostname_suffix.value + "/\" >> \"$CYCLOID_OUTPUT\"\necho \"app_ref=" + .fields.commit.value + "\" >> \"$CYCLOID_OUTPUT\""'
   update:
     steps:
       - id: helm
@@ -105,8 +105,8 @@ workflows:
           namespace: cycloid-academy
           chart: !tpl 'oci://ghcr.io/cycloidio/charts/academy-app:0.1.0-g($= fields.commit.value $)'
           values:
-            ingress.host: !tpl '($= resource.slug $)-($= environment.slug $).($= fields.hostname_suffix.value $)'
-            environment: !jq '.environment.slug'
+            ingress.host: !jq '.resource.slug + "-" + (.environment.slug // "none") + "." + .fields.hostname_suffix.value'
+            environment: !jq '.environment.slug // "none"'
             message: !jq '.fields.message.value'
       - id: address
         type: shell
@@ -114,10 +114,7 @@ workflows:
         outputs: [url, app_ref]
         params:
           image: alpine:3.24.4@sha256:f59abe656b692d901e184be3445e084786602108599d2a51d229c0f5a48c71bf
-          script: !tpl |
-            set -eu
-            echo "url=http://($= resource.slug $)-($= environment.slug $).($= fields.hostname_suffix.value $)/" >> "$CYCLOID_OUTPUT"
-            echo "app_ref=($= fields.commit.value $)" >> "$CYCLOID_OUTPUT"
+          script: !jq '"set -eu\necho \"url=http://" + .resource.slug + "-" + (.environment.slug // "none") + "." + .fields.hostname_suffix.value + "/\" >> \"$CYCLOID_OUTPUT\"\necho \"app_ref=" + .fields.commit.value + "\" >> \"$CYCLOID_OUTPUT\""'
   destroy:
     steps:
       - id: helm
