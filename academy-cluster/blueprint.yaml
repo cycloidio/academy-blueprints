@@ -12,6 +12,10 @@
 # Environment's credentials (Cycloid cannot create a credential from a run).
 
 # Created by the Platform Team in the `dev` Environment, which holds the AWS credential.
+id: academy-cluster
+name: Academy cluster
+description: One AWS machine running K3s, ready for apps deployed with Helm.
+
 environment_scope: required
 
 credentials:

@@ -13,6 +13,10 @@
 # - no `version` parameter: each chart reference carries its version;
 # - `upgrade` is run without `--install`: the first deploy must be `install`, later ones `upgrade`.
 
+id: academy-probe-helm
+name: Helm probe (temporary)
+description: Checks that a helm step reaches the Academy cluster. Never shipped.
+
 credentials:
   - id: cluster
     type: kubeconfig

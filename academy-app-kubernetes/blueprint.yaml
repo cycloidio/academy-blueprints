@@ -13,6 +13,10 @@
 # The helm step runs `upgrade` without `--install`: "Deploy" installs, "Update" upgrades.
 
 # An app runs in an Environment (`dev`, then `prod` by promotion): its name is part of the address.
+id: academy-app
+name: Academy App (Kubernetes)
+description: A service made from the academy-app template, deployed with Helm on the Academy cluster.
+
 environment_scope: required
 
 credentials:
