@@ -41,6 +41,48 @@ Build plan: `k3s-first-path.md` and `track-assessment.md` (shared notes folder o
 | 2026-11-18 | Both repositories keep `master` as their default branch; the missions' text says `master` where the plan says `main` | Olivier |
 | 2026-11-18 | First investigation, before any build: can the kubeconfig live in AWS Secrets Manager, so that the Kubernetes Provider finds it there | Olivier |
 
+## Missions C0 to C3 as walked (K3s track, 2026-11-20)
+
+The steps as Olivier's walk and decisions leave them; the plan's text (`docs/missions-plan-draft.md`, specs/11) is
+updated from this by the orchestrator session. The workspace owner does every step. Status: **walked** (done in
+Olivier's alpha workspace), **partly**, **not yet**, **blocked**.
+
+### C0. Set up the workspace (Platform team)
+
+| # | Step | Status |
+|---|---|---|
+| 1 | **Repositories → Add repository**: `https://github.com/cycloidio/academy-blueprints.git`, owning team `Platform Team`, a read-only access token (required even for a public repository, G18) | Partly: added; the scan fails with a placeholder token (T17) |
+| 2 | **Settings → Blueprint management → Add Blueprint source**, one per folder, Auto-sync on: `academy-environment` and `academy-cluster` owned by `Platform Team`, `academy-app-kubernetes` owned by `Development Team`; the source sets each Blueprint's owner team. Then publish each draft. (Until it works: paste each `blueprint.yaml` as the platform team and set its owner team by hand.) | Blocked by step 1 |
+| 3 | **Environments → Create environment** (Academy Environment Blueprint): `dev` type development, `prod` type production | Walked (T14) |
+| 4 | **Teams → Create team**: `Engineering` (Engineering Team Blueprint, no invitation), then `Platform Team` and `Development Team`, both under `Engineering` | Walked (as `Developers`; rename pending) |
+| 5 | Roles on the Environments: `Platform Team` **stewards** `dev` and `prod`; both teams **eligible** for `dev` and `prod` (team overview page); **deploy rights** (Environment Access tab → "Who can deploy here"): `prod` → `Platform Team` Owner; `dev` → `Development Team` Owner, `Platform Team` Deployer. `Development Team` reaches `prod` by promotion only | Partly: `dev` stewarding and eligibility set; deploy rights being tested (T16) |
+| 6 | Invite other people into `Platform Team` and `Development Team` (optional; overlaps the plan's C5) | Not yet |
+
+### C1. Connect your Git (Platform team)
+
+| # | Step | Status |
+|---|---|---|
+| 1 | Install the Cycloid GitHub App on the tester's organisation, **Only select repositories** | Not yet |
+| 2 | The platform team creates the service's repository by hand (empty), then a scaffolding Blueprint copies the `academy-app` template into it with the service's name; candidate: the "GitHub repository" Blueprint the Cycloid Ops team published. Pushing to a protected default branch fails under an organisation ruleset (G12) | Not yet |
+| 3 | The service's first CI run passes and publishes its image and chart (`ghcr.io/<owner>/<repository>`, `oci://ghcr.io/<owner>/charts/<repository>`); the packages are made public (G15) | Walked for `cycloidio/academy-app` (T3, T9) |
+| 4 | **Repositories**: import the service's repository through the GitHub App | Not yet |
+
+### C2. Connect your cloud (Platform team)
+
+| # | Step | Status |
+|---|---|---|
+| 1 | AWS CloudShell, one pasted AWS CLI block: Terraform state bucket `cycloid-academy-tfstate-<account>`, permissions boundary, Cycloid's OIDC provider, role `cycloid-academy-deployer`; a second block removes them | Partly: test block (state bucket and a test user's access key) walked; the OIDC block waits on Cycloid's issuer, audience and subject (D3) |
+| 2 | In Cycloid: enable the AWS plugin; add the AWS credential (`aws-oidc` with the role ARN; the test access key until then) **on the `dev` Environment** (a Provider cannot hold it today, G8) | Partly: the test key worked on a team (T4); on `dev`: not yet |
+
+### C3. Create where your app runs (Platform team)
+
+| # | Step | Status |
+|---|---|---|
+| 1 | Catalog → **Academy cluster** → Environment `dev`, as `Platform Team` → region (the C2 one), machine size → **Create the cluster**. One `shell` step runs Terraform (stopgap D1); about 10 minutes; ends when the cluster page answers | Walked (T5), before the Environment existed |
+| 2 | Open the cluster page `http://<ip>/`: "Your cluster is ready. No app yet."; the Resource shows its IP, page, app hostname suffix, kubeconfig secret, region | Walked (T5, T8) |
+| 3 | AWS console → Secrets Manager → `cycloid-academy-<name>-kubeconfig` → copy → Cycloid: add it as a `kubeconfig` credential on `dev` (to try: on the cluster Resource, reached by the apps through their `depends_on` link, which would also serve `prod`) | Walked on a team (T6); on `dev` or the cluster: not yet |
+| 4 | `Development Team` sees the cluster read-only, through the app Blueprint's `depends_on` link to the cluster | Not yet |
+
 ## Cycloid format references
 
 | Date | Reference | What it confirms |
@@ -135,6 +177,7 @@ Beta date given: 7 Dec 2026, after the Academy launch of 1 Dec.
 | T8 | 2026-11-19 | Cluster Resource after C3 | Properties shown: `shell` step outputs become Resource properties | G10 workaround works |
 | T9 | 2026-11-19 | GHCR packages `academy-app` and `charts/academy-app` made public by Olivier | Done | Q3 |
 | B8 | 2026-11-20 | Read the alpha's guide "Blueprint repositories" (`cycloid` repo `docs/guides/blueprint-repositories.md`, same page as the alpha's /docs/guides/blueprint-repositories). Git sources exist: a repository is added on **Repositories** by URL with a workspace access token, or imported through the GitHub App; then **Settings → Blueprint management → Add Blueprint source**: repository, **branch** (no tag), folder, **Owner** team (the Blueprints it imports belong to it), Auto-sync; scan lists every folder with a `blueprint.yaml`, which must have an `id`; an existing Blueprint with that id is **Adopted** (draft replaced, published versions and Resources unchanged); the manifest may set name and description; a Git repository needs a push webhook. Added `id`, `name`, `description` to `academy-cluster` (id `academy-cluster`), `academy-app-kubernetes` (id `academy-app`, to adopt Olivier's existing Academy App) and `probe-helm` (id `academy-probe-helm`) | Owner team per Blueprint is set by the source (one source per folder), which answers G17 for owners; visibility still not in Git. A public repository without any token: not said | C0 step 1 |
+| T17 | 2026-11-20 | C0 step 1: **Repositories → Add repository** for `https://github.com/cycloidio/academy-blueprints` (public), then **Add Blueprint source** | The form requires an access token even for a public repository; a placeholder value is accepted at save (Cycloid does not try the token when adding). The scan then fails: `git ls-remote failed: fatal: could not read Username for 'https://github.com': terminal prompts disabled`: GitHub refuses the invalid token rather than ignoring it, and git falls back to asking for a username. Next: a real read-only token (GitHub fine-grained token, "Public repositories (read-only)", no other permission, on a service account), entered only in Cycloid's form | G18 |
 | T16 | 2026-11-19 | As a member of `Developers` (which stewards `dev` and is eligible for any Environment), deploy into `dev` | Refused. Eligibility is met; per the Cycloid specs (03/09 §5, Environment Access tab), deploying also needs an `owner` or `deployer` assignment on the Environment ("Who can deploy here"); stewardship and eligibility grant no deploy right, and with no assignment only a Tenant Admin can deploy. To test: add `Developers` as `deployer` (or `owner`) on `dev`. Olivier found on `dev`'s Access tab a **Manage access** button that gives `Developers` "Can manage"; per the specs that is page access (explicit grant), distinct from the "Who can deploy here" roles: whether it lets a member deploy is to test | C0 needs a deploy-rights step |
 | T15 | 2026-11-19 | C0 step 4: owner team of Academy cluster set to `Platform Team`, of Academy app to `Developers` | The workspace owner still sees both Blueprints. Deploying them as the workspace owner after the change, and `Developers` eligible for `dev` and `prod`: to check | C0 ownership step |
 | T14 | 2026-11-19 | Academy Environment v2 in the portal; `dev` (development) and `prod` (production) created | **Success**: short green run, both Environments exist | G16 worked around |
@@ -173,6 +216,7 @@ Beta date given: 7 Dec 2026, after the Academy launch of 1 Dec.
 | G15. Private registries: a prospect's packages are private by default and many organisations forbid public ones. The `helm` step cannot log in to a registry (Cycloid: "not planned yet"), so a private chart cannot be deployed; a private image would also need a pull secret in the chart. Today the two packages must be public | Olivier's question, 2026-11-19 | Cycloid team: private registry support in the `helm` step (to ask). Possible stopgap, real pattern, not built: a `shell` step on the helm image that runs `helm registry login` with a read token credential, then `helm upgrade --install` |
 | G16. Creating a Resource from a Blueprint with a `kind` (Environment) always runs its create action, and a create with no step is refused; a Blueprint with no action and no kind is "registered" without a run. An Environment, which runs nothing, needs a placeholder step | T13, 2026-11-19 | Cycloid team: should a kind-bearing Blueprint with no action be registered without a run? |
 | G17. A Blueprint's owner team and visibility are not read from its YAML: they are Blueprint settings in Cycloid, kept there even for a Blueprint synced from Git ("Metadata (name, description, icon, visibility, owner team) stays editable in Cycloid", `apps/web/app/components/BlueprintDefinitionEditor.vue`; the upload of a bundle sets neither). C0 must set them by hand per Blueprint, unless the catalog source's team assignment does it | Code read, 2026-11-19 | Cycloid team: can a Blueprint source set owner team and visibility for the Blueprints it brings? |
+| G18. Adding a Git repository requires an access token even when the repository is public; a placeholder token makes the scan fail. Every tester needs a GitHub token before C0 can publish the catalog | T17, 2026-11-20 | Cycloid team: accept a public repository with no token |
 
 ## Questions for the Cycloid team
 
@@ -191,6 +235,7 @@ Beta date given: 7 Dec 2026, after the Academy launch of 1 Dec.
 | How does an app Blueprint read a property of another Resource (the cluster's IP, for the sslip.io hostname): a form source listing Resources, a relation in expressions, or a form field the person fills? | Not yet | |
 | When will the `helm` step support private registries (a credential for `helm registry login`, OCI or HTTP)? Prospects' GitHub packages are private by default (G15) | Not yet | |
 | Can a Blueprint source (C0) set the owner team and visibility of the Blueprints it brings, or must each be set by hand (G17)? | Not yet | |
+| Can a public Git repository be added with no access token (G18)? | Not yet | |
 | AWS Secrets Manager backend (FS-1937): when, and can a credential reference an existing secret in the customer's account (ARN) with the Provider's AWS role, rather than one Cycloid writes? | Not yet | |
 
 ## Comparison grid entries (K3s)
