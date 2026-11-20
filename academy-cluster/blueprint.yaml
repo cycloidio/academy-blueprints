@@ -1,0 +1,157 @@
+# Academy cluster (C3): one machine on AWS running K3s, ready for apps deployed with Helm.
+#
+# STOPGAP (decision D1, docs/first-path-log.md): Cycloid's alpha runs no `terraform` step and
+# cannot take a Blueprint's files from Git yet. Until both ship, one `shell` step runs the
+# official Terraform image, fetches this repository at a fixed tag, and applies
+# academy-cluster/terraform. Replace it with `terraform` steps once both are available.
+#
+# AWS access: Cycloid's OIDC token when the Environment has an `aws-oidc` credential (D3);
+# otherwise an `aws-access-key` credential, for Olivier's first tests only, never in a mission.
+# Terraform state: the S3 bucket cycloid-academy-tfstate-<account> created in C2, in the cluster's region (D2).
+# The kubeconfig: the machine writes it to Secrets Manager; a person pastes it into the
+# Environment's credentials (Cycloid cannot create a credential from a run).
+
+# Created by the Platform Team in the `dev` Environment, which holds the AWS credential.
+id: academy-cluster
+name: Academy cluster
+description: One AWS machine running K3s, ready for apps deployed with Helm.
+
+environment_scope: required
+
+credentials:
+  - id: aws_oidc
+    type: aws-oidc
+    required: false
+    description: AWS access through Cycloid's OIDC token and the C2 role
+  - id: aws_key
+    type: aws-access-key
+    required: false
+    description: AWS access key, for testing only
+
+property_schema:
+  - { id: public_ip, name: Public IP, type: string, display: catalog }
+  - { id: url, name: Cluster page, type: string, display: catalog }
+  - { id: hostname_suffix, name: App hostname suffix, type: string, display: detail }
+  - { id: kubeconfig_secret_name, name: Kubeconfig secret (AWS Secrets Manager), type: string, display: detail }
+  - { id: region, name: Region, type: string, display: detail }
+  - { id: state_bucket, name: Terraform state bucket, type: string, display: hidden }
+
+actions:
+  - id: deploy
+    name: Create the cluster
+    trigger: manual
+    workflow: deploy
+    form:
+      content:
+        - id: region
+          type: string
+          name: AWS region
+          description: The region set up in C2, where the Terraform state bucket is.
+          required: true
+          default: eu-west-1
+          values: [eu-west-1, eu-west-3, eu-central-1, us-east-1, us-west-2]
+        - id: instance_type
+          type: string
+          name: Machine size
+          description: t3.medium is 2 vCPU and 4 GB, enough for K3s and a few small apps.
+          default: t3.medium
+          values: [t3.medium, t3.large, t3a.medium, t3a.large]
+        - id: aws_account_id
+          type: { string: { pattern: '^[0-9]{12}$' } }
+          name: AWS account ID
+          description: Testing with an access key only. With OIDC, the account comes from the C2 role.
+  - id: destroy
+    name: Remove the cluster
+    trigger: manual
+    workflow: destroy
+
+workflows:
+  deploy:
+    steps:
+      - id: terraform
+        type: shell
+        timeout: 1800
+        outputs: [public_ip, url, hostname_suffix, kubeconfig_secret_name, region, state_bucket]
+        params:
+          image: hashicorp/terraform:1.17.2@sha256:6e9c1e647c31a960dc9b59e13272f9111d90010c10b717f77ffb324767660475
+          script: !tpl |
+            set -eu
+            NAME='($= resource.slug $)'
+            REGION='($= fields.region.value $)'
+            SIZE='($= fields.instance_type.value $)'
+            ACCOUNT_INPUT='($= fields.aws_account_id.value ?? "" $)'
+            REPO=https://github.com/cycloidio/academy-blueprints
+            REF=cycloid-academy-cluster-v0.2.0
+
+            # AWS access: the OIDC token, exchanged by the AWS SDK for the C2 role; else the key.
+            if [ -n "${CYCLOID_OIDC_TOKEN:-}" ]; then
+              printf '%s' "$CYCLOID_OIDC_TOKEN" > /tmp/oidc-token
+              export AWS_WEB_IDENTITY_TOKEN_FILE=/tmp/oidc-token
+              ACCOUNT=$(echo "$AWS_ROLE_ARN" | cut -d: -f5)
+            elif [ -n "${AWS_ACCESS_KEY_ID:-}" ]; then
+              ACCOUNT=$ACCOUNT_INPUT
+            else
+              echo "No AWS credential: add an aws-oidc (or, to test, aws-access-key) credential to the Environment." >&2
+              exit 1
+            fi
+            [ -n "$ACCOUNT" ] || { echo "AWS account ID missing." >&2; exit 1; }
+            BUCKET="cycloid-academy-tfstate-$ACCOUNT"
+
+            git clone -q --depth 1 --branch "$REF" "$REPO" /tmp/src
+            cd /tmp/src/academy-cluster/terraform
+            terraform init -input=false -no-color \
+              -backend-config="bucket=$BUCKET" \
+              -backend-config="key=cycloid-academy/clusters/$NAME/terraform.tfstate" \
+              -backend-config="region=$REGION" \
+              -backend-config="use_lockfile=true"
+            terraform apply -input=false -no-color -auto-approve \
+              -var "name=$NAME" -var "region=$REGION" -var "instance_type=$SIZE"
+
+            IP=$(terraform output -raw public_ip)
+            echo "Waiting for http://$IP/ to say the cluster is ready (K3s install, kubeconfig written)."
+            i=0
+            until wget -q -T 5 -O - "http://$IP/" 2>/dev/null | grep -q 'Your cluster is ready'; do
+              i=$((i + 1))
+              [ "$i" -lt 90 ] || { echo "The cluster did not get ready in 15 minutes: see /var/log/cycloid-academy-first-boot.log on the machine." >&2; exit 1; }
+              sleep 10
+            done
+            echo "Cluster ready."
+
+            {
+              echo "public_ip=$IP"
+              echo "url=$(terraform output -raw url)"
+              echo "hostname_suffix=$(terraform output -raw hostname_suffix)"
+              echo "kubeconfig_secret_name=$(terraform output -raw kubeconfig_secret_name)"
+              echo "region=$REGION"
+              echo "state_bucket=$BUCKET"
+            } >> "$CYCLOID_OUTPUT"
+
+  destroy:
+    steps:
+      - id: terraform
+        type: shell
+        timeout: 1800
+        params:
+          image: hashicorp/terraform:1.17.2@sha256:6e9c1e647c31a960dc9b59e13272f9111d90010c10b717f77ffb324767660475
+          script: !tpl |
+            set -eu
+            NAME='($= resource.slug $)'
+            REGION='($= resource.properties.region $)'
+            BUCKET='($= resource.properties.state_bucket $)'
+            REPO=https://github.com/cycloidio/academy-blueprints
+            REF=cycloid-academy-cluster-v0.2.0
+
+            if [ -n "${CYCLOID_OIDC_TOKEN:-}" ]; then
+              printf '%s' "$CYCLOID_OIDC_TOKEN" > /tmp/oidc-token
+              export AWS_WEB_IDENTITY_TOKEN_FILE=/tmp/oidc-token
+            fi
+
+            git clone -q --depth 1 --branch "$REF" "$REPO" /tmp/src
+            cd /tmp/src/academy-cluster/terraform
+            terraform init -input=false -no-color \
+              -backend-config="bucket=$BUCKET" \
+              -backend-config="key=cycloid-academy/clusters/$NAME/terraform.tfstate" \
+              -backend-config="region=$REGION" \
+              -backend-config="use_lockfile=true"
+            terraform destroy -input=false -no-color -auto-approve \
+              -var "name=$NAME" -var "region=$REGION"
