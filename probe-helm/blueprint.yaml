@@ -1,0 +1,105 @@
+# Probe, temporary, never shipped: does a `helm` step reach a Kubernetes cluster with the kubeconfig
+# credential of the Kubernetes plugin? (docs/first-path-log.md, build step 3)
+#
+# Shape taken from a Blueprint exported from the alpha (top-level actions[] and workflows{}).
+# Credential and helm parameters taken from the cycloid repository code (helm step parameter schema,
+# Blueprint credential declaration, kubeconfig credential type), not from the illustrative spec examples.
+#
+# Needs: the namespace `cycloid-academy` exists on the cluster (the kubeconfig is limited to it, so the step
+# does not create it), and a credential of type `kubeconfig` reachable from the Resource (default
+# walk: Resource, Environment, Provider linked to the Environment, Team).
+#
+# Two limits of the helm step seen in the code, tested here:
+# - no `version` parameter: each chart reference carries its version;
+# - `upgrade` is run without `--install`: the first deploy must be `install`, later ones `upgrade`.
+
+id: academy-probe-helm
+name: Helm probe (temporary)
+description: Checks that a helm step reaches the Academy cluster. Never shipped.
+
+credentials:
+  - id: cluster
+    type: kubeconfig
+    description: Access to the cycloid-academy namespace of the cluster
+
+actions:
+  # A plain HTTPS chart archive: the most certain form for helm.
+  - id: deploy
+    name: Deploy podinfo (chart archive URL)
+    trigger: manual
+    workflow: deploy
+  - id: update
+    name: Update podinfo (helm upgrade)
+    trigger: manual
+    workflow: update
+  - id: destroy
+    name: Destroy podinfo
+    trigger: manual
+    workflow: destroy
+  # The same chart from an OCI registry with the version in the reference: the form academy-app
+  # would publish to GHCR. Separate release, so it can run beside the first one.
+  - id: deploy-oci
+    name: Deploy podinfo (OCI reference)
+    trigger: manual
+    workflow: deploy-oci
+  - id: destroy-oci
+    name: Destroy podinfo (OCI)
+    trigger: manual
+    workflow: destroy-oci
+
+workflows:
+  deploy:
+    steps:
+      - id: install
+        type: helm
+        timeout: 300
+        params:
+          command: install
+          release: probe
+          namespace: cycloid-academy
+          chart: https://stefanprodan.github.io/podinfo/podinfo-6.17.0.tgz
+          values:
+            ui.message: !jq '"Hello from " + .resource.name'
+            replicaCount: 1
+  update:
+    steps:
+      - id: upgrade
+        type: helm
+        timeout: 300
+        params:
+          command: upgrade
+          release: probe
+          namespace: cycloid-academy
+          chart: https://stefanprodan.github.io/podinfo/podinfo-6.17.0.tgz
+          values:
+            ui.message: !jq '"Updated: " + .resource.name'
+            replicaCount: 1
+  destroy:
+    steps:
+      - id: uninstall
+        type: helm
+        params:
+          command: uninstall
+          release: probe
+          namespace: cycloid-academy
+  deploy-oci:
+    steps:
+      - id: install
+        type: helm
+        timeout: 300
+        params:
+          command: install
+          release: probe-oci
+          namespace: cycloid-academy
+          chart: oci://ghcr.io/stefanprodan/charts/podinfo:6.17.0
+          values:
+            ui.message: !jq '"Hello from " + .resource.name + " (OCI)"'
+            replicaCount: 1
+  destroy-oci:
+    steps:
+      - id: uninstall
+        type: helm
+        params:
+          command: uninstall
+          release: probe-oci
+          namespace: cycloid-academy

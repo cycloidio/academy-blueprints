@@ -1,0 +1,213 @@
+#!/bin/bash
+# First boot of an Academy cluster machine (cloud-init runs it once, as root).
+#
+# 1. Installs K3s at a pinned version, with the fixed public address in its certificate.
+# 2. Creates the `cycloid-academy` namespace and a service account that can manage that namespace only.
+# 3. Builds a kubeconfig for that account and writes it to the Secrets Manager secret.
+# 4. Only then starts the default page "Your cluster is ready", the sign the cluster is usable.
+#
+# The log is /var/log/cycloid-academy-first-boot.log. It never holds the token or the kubeconfig.
+set -euo pipefail
+exec >>/var/log/cycloid-academy-first-boot.log 2>&1
+umask 077
+
+PUBLIC_IP='${public_ip}'
+REGION='${region}'
+SECRET_ID='${secret_id}'
+CLUSTER='cycloid-academy-${cluster_name}'
+WORK=$(mktemp -d)
+trap 'rm -rf "$WORK"' EXIT
+
+echo "$(date -Is) first boot of $CLUSTER on $PUBLIC_IP"
+
+# --- AWS CLI, from AWS's snap, to write the secret --------------------------------------------
+snap wait system seed.loaded
+snap install aws-cli --classic
+
+# --- K3s ----------------------------------------------------------------------------------------
+# The installer of the pinned release, refused if its checksum differs; it then checks the
+# K3s binary against the release's own checksums.
+curl -sfL -o "$WORK/k3s-install.sh" 'https://raw.githubusercontent.com/k3s-io/k3s/${k3s_version}/install.sh'
+echo '${k3s_install_sha256}  '"$WORK/k3s-install.sh" | sha256sum -c -
+INSTALL_K3S_VERSION='${k3s_version}' sh "$WORK/k3s-install.sh" server \
+  --tls-san "$PUBLIC_IP" \
+  --write-kubeconfig-mode 600
+
+until k3s kubectl get --raw /readyz >/dev/null 2>&1; do sleep 2; done
+echo "$(date -Is) K3s API ready"
+
+# --- The cycloid-academy namespace and its deployer ------------------------------------------
+# The built-in `admin` ClusterRole, bound in `cycloid-academy` only: full control of that namespace,
+# nothing cluster-wide. Pods there cannot reach the machine's metadata service (hop limit 1 on
+# the machine, and this network policy).
+k3s kubectl apply -f - <<'EOF'
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cycloid-academy
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: cycloid-academy-deployer
+  namespace: cycloid-academy
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: cycloid-academy-deployer-admin
+  namespace: cycloid-academy
+subjects:
+  - kind: ServiceAccount
+    name: cycloid-academy-deployer
+    namespace: cycloid-academy
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: admin
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cycloid-academy-deployer-token
+  namespace: cycloid-academy
+  annotations:
+    kubernetes.io/service-account.name: cycloid-academy-deployer
+type: kubernetes.io/service-account-token
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: no-metadata-service
+  namespace: cycloid-academy
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - ipBlock:
+            cidr: 0.0.0.0/0
+            except: [169.254.169.254/32]
+EOF
+
+TOKEN=''
+until [ -n "$TOKEN" ]; do
+  sleep 1
+  TOKEN=$(k3s kubectl -n cycloid-academy get secret cycloid-academy-deployer-token -o jsonpath='{.data.token}' | base64 -d)
+done
+CA=$(base64 -w0 /var/lib/rancher/k3s/server/tls/server-ca.crt)
+
+# --- The kubeconfig, written to Secrets Manager --------------------------------------------------
+cat >"$WORK/kubeconfig" <<EOF
+apiVersion: v1
+kind: Config
+clusters:
+  - name: $CLUSTER
+    cluster:
+      server: https://$PUBLIC_IP:6443
+      certificate-authority-data: $CA
+users:
+  - name: cycloid-academy-deployer
+    user:
+      token: $TOKEN
+contexts:
+  - name: $CLUSTER
+    context:
+      cluster: $CLUSTER
+      user: cycloid-academy-deployer
+      namespace: cycloid-academy
+current-context: $CLUSTER
+EOF
+unset TOKEN
+
+until /snap/bin/aws secretsmanager put-secret-value --region "$REGION" --secret-id "$SECRET_ID" \
+  --secret-string "file://$WORK/kubeconfig" >/dev/null; do
+  echo "$(date -Is) writing the secret failed, retrying"
+  sleep 5
+done
+echo "$(date -Is) kubeconfig written to the secret"
+
+# --- The default page: the sign the cluster is ready ---------------------------------------------
+# K3s applies what it finds in this folder. The page answers on the bare public address; apps
+# answer on their own hostnames.
+cat >/var/lib/rancher/k3s/server/manifests/cycloid-academy-welcome.yaml <<'EOF'
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cycloid-academy-welcome
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: welcome
+  namespace: cycloid-academy-welcome
+data:
+  index.html: |
+    <!doctype html>
+    <html lang="en"><head><meta charset="utf-8"><title>Academy cluster</title></head>
+    <body style="font-family: system-ui, sans-serif; max-width: 40rem; margin: 4rem auto; padding: 0 1rem">
+    <h1>Your cluster is ready. No app yet.</h1>
+    <p>Cycloid Academy cluster ${cluster_name}.</p>
+    </body></html>
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: welcome
+  namespace: cycloid-academy-welcome
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: welcome }
+  template:
+    metadata:
+      labels: { app: welcome }
+    spec:
+      automountServiceAccountToken: false
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile: { type: RuntimeDefault }
+      containers:
+        - name: nginx
+          image: ${welcome_image}
+          ports:
+            - { name: http, containerPort: 8080 }
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities: { drop: [ALL] }
+          resources:
+            requests: { cpu: 5m, memory: 16Mi }
+            limits: { cpu: 50m, memory: 32Mi }
+          volumeMounts:
+            - { name: page, mountPath: /usr/share/nginx/html, readOnly: true }
+            - { name: tmp, mountPath: /tmp }
+      volumes:
+        - name: page
+          configMap: { name: welcome }
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: welcome
+  namespace: cycloid-academy-welcome
+spec:
+  selector: { app: welcome }
+  ports:
+    - { name: http, port: 80, targetPort: http }
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: welcome
+  namespace: cycloid-academy-welcome
+spec:
+  ingressClassName: traefik
+  defaultBackend:
+    service:
+      name: welcome
+      port: { name: http }
+EOF
+echo "$(date -Is) first boot done"
