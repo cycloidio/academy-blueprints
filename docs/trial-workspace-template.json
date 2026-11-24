@@ -1,0 +1,23 @@
+{
+  "teams": [
+    {
+      "name": "Engineering",
+      "slug": "engineering",
+      "description": "Everyone who builds and runs the software."
+    },
+    {
+      "name": "Platform Team",
+      "slug": "platform-team",
+      "parentSlug": "engineering",
+      "description": "Prepares the workspace, the clusters and the catalog the developers use."
+    },
+    {
+      "name": "Development Team",
+      "slug": "development-team",
+      "parentSlug": "engineering",
+      "description": "Builds the services and deploys them through Cycloid."
+    }
+  ],
+  "labelGroups": [],
+  "blueprintRefs": []
+}
