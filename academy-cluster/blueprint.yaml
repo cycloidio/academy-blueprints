@@ -138,6 +138,14 @@ workflows:
             NAME='($= resource.slug $)'
             REGION='($= resource.properties.region $)'
             BUCKET='($= resource.properties.state_bucket $)'
+            # A property the create run did not write reads as empty, "undefined" or "null".
+            for v in "Region:$REGION" "Terraform state bucket:$BUCKET"; do
+              case "${v#*:}" in
+                ''|undefined|null)
+                  echo "This cluster has no ${v%%:*} property, so it cannot be removed from Cycloid: nothing was changed. Remove its AWS resources by hand (they carry the tag cycloid-academy:cluster=$NAME)." >&2
+                  exit 1 ;;
+              esac
+            done
             REPO=https://github.com/cycloidio/academy-blueprints
             REF=cycloid-academy-cluster-v0.2.0
 
