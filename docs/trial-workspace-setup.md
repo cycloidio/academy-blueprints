@@ -21,7 +21,15 @@ adds none, so a new workspace would report ours as missing.
 Admin Panel → Workspaces → Create workspace, template "Academy Build" (name, slug and the other fields as in the
 Academy runbook). Check: the workspace has the three teams, `Platform Team` and `Development Team` under `Engineering`.
 
-## 2. Enable the Kubernetes and AWS plugins
+## 2. Get the workspace's jobs run
+
+On the alpha, runners do not run steps yet: a platform worker runs the jobs of the workspaces named in its setting
+(`CY_WORKER_TENANT_SLUGS`), and the runs of any other workspace stay Pending (G27). Ask the Cycloid team to add the
+new workspace's slug to that list. Later, a runner per workspace (Settings → Runners; Academy runbook step 4).
+
+Check: a run started in the workspace leaves Pending.
+
+## 3. Enable the Kubernetes and AWS plugins
 
 Settings → Plugins → **Kubernetes** → Enable, and approve its permissions. The same for **AWS**.
 
@@ -32,14 +40,14 @@ Settings → Plugins → **Kubernetes** → Enable, and approve its permissions.
 
 Check: both show as Enabled on Settings → Plugins.
 
-## 3. Add the catalog repository
+## 4. Add the catalog repository
 
 Repositories → Add repository: `https://github.com/cycloidio/academy-blueprints`, with the shared read-only token
 (the Cycloid service account's GitHub token, "Public repositories (read-only)"). Type the token only into this form,
 never into a file, a ticket or a message. Cycloid requires a token even for a public repository, and GitHub refuses a
 placeholder (T17).
 
-## 4. Add the three Blueprint sources
+## 5. Add the three Blueprint sources
 
 Settings → Blueprint management → Add Blueprint source, three times, on that repository:
 
@@ -49,15 +57,16 @@ Settings → Blueprint management → Add Blueprint source, three times, on that
 | `academy-cluster` | Academy cluster | Platform Team |
 | `academy-app-kubernetes` | Academy App (Kubernetes) | Development Team |
 
-Branch `master` (`first-path` while the Kubernetes path is being tested). Auto-sync on, **no webhook**: Sync now and
+One source per folder, never one source on `/`: that would also bring the folders that are not for testers (such as
+the Helm probe). Branch `master` (`first-path` while the Kubernetes path is being tested). Auto-sync on, **no webhook**: Sync now and
 the daily check keep the drafts in step (decision 2026-11-20). Check: each source's scan finds one Blueprint.
 
-## 5. Publish the three drafts
+## 6. Publish the three drafts
 
 Open each Blueprint and Publish (it cuts v1). Check: the three Blueprints show a published v1. Academy Environment is
 not listed in the catalog (Environment Blueprints never are); it is used by Environments → Create environment in C0.
 
-If a publish says "Credential type … is provided by the … plugin, which is not enabled for this tenant", step 2 was
+If a publish says "Credential type … is provided by the … plugin, which is not enabled for this tenant", step 3 was
 skipped: enable that plugin and publish again.
 
 ## Not yet
