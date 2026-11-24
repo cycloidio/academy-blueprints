@@ -43,7 +43,7 @@ Build plan: `k3s-first-path.md` and `track-assessment.md` (shared notes folder o
 | 2026-11-18 | Both repositories keep `master` as their default branch; the missions' text says `master` where the plan says `main` | Olivier |
 | 2026-11-18 | First investigation, before any build: can the kubeconfig live in AWS Secrets Manager, so that the Kubernetes Provider finds it there | Olivier |
 | 2026-11-23 | Pull request previews: the preview settings are filled at the start of **M8**, by the app's team (`Development Team`, which stewards the app and holds Can manage on it), not in C6. C6 stays with the platform team: the `previews` sandbox Environment, its expiry default and cap, who may deploy there, eligible teams, and a kubeconfig reachable from it | Olivier |
-| 2026-11-24 | Wipe the `cycloid-demo` workspace and the test AWS account's Academy resources, then walk every mission again from a fresh workspace, in order (C0 onwards). In the new walk: one AWS Provider with the access key only, its `region` field left empty (G24), until OIDC; the kubeconfig on a Kubernetes Provider linked to `dev`, not on `dev` | Olivier |
+| 2026-11-24 | Wipe the `cycloid-demo` workspace and the test AWS account's Academy resources, then walk every mission again from a fresh workspace, in order (C0 onwards). Claude's advice for the new walk, to confirm: one AWS Provider with the access key only, its `region` field left empty (G24), until OIDC; the kubeconfig on a Kubernetes Provider linked to `dev`, not on `dev` | Olivier |
 
 ## Missions C0 to C3 as walked (K3s track, 2026-11-20)
 
