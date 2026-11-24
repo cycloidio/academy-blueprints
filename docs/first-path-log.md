@@ -12,7 +12,7 @@ Build plan: `k3s-first-path.md` and `track-assessment.md` (shared notes folder o
 
 | Date | Decision | By |
 |---|---|---|
-| 2026-11-24 | `Platform Team` stewards both `dev` and `prod`, as C0 says; the T29 walk set `Development Team` on `dev`, to change back | Olivier |
+| 2026-11-24 | `Platform Team` stewards both `dev` and `prod`, as C0 says; the T29 walk set `Development Team` on `dev`, changed back the same day | Olivier |
 | 2026-11-18 | Code lives in `cycloidio/academy-app` and `cycloidio/academy-blueprints`, local clones in `~/Projects/` | Olivier |
 | 2026-11-18 | Publishing the catalog from the tester's own `academy-blueprints` is its own setup mission, never part of C1. C1 stays as specs/11 has it: `academy-app` only | Olivier |
 | 2026-11-18 | Q2: the Helm chart lives in `academy-app/chart/`, published by the CI to GHCR as an OCI artifact tagged with the commit SHA; `academy-app` is a simple Node app | Olivier |
@@ -64,7 +64,7 @@ real token (T18).
 | # | Step | Status |
 |---|---|---|
 | 1 | **Environments → Create environment** (Academy Environment Blueprint): `dev` type development, `prod` type production | Walked (T14) |
-| 2 | Roles on the Environments: `Platform Team` **stewards** `dev` and `prod`; both teams **eligible** for `dev` and `prod` (team overview page); **deploy rights** (Environment Access tab → "Who can deploy here"): `prod` → `Platform Team` Owner; `dev` → `Development Team` Owner, `Platform Team` Deployer. `Development Team` reaches `prod` by promotion only | Walked (T29, T30); `dev`'s stewarding team back to `Platform Team` (decision 2026-11-24) |
+| 2 | Roles on the Environments: `Platform Team` **stewards** `dev` and `prod`; both teams **eligible** for `dev` and `prod` (team overview page); **deploy rights** (Environment Access tab → "Who can deploy here"): `prod` → `Platform Team` Owner; `dev` → `Development Team` Owner, `Platform Team` Deployer. `Development Team` reaches `prod` by promotion only | Walked (T29, T30); `dev` stewarded by `Platform Team` again (decision 2026-11-24) |
 | 3 | Invite other people into `Platform Team` and `Development Team` (optional; overlaps the plan's C5) | Not yet |
 
 ### C1. Connect your Git (Platform team)
